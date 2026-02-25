@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EmbeddedNetworkLab.UI.Modules.Throughput
 {
@@ -23,6 +14,31 @@ namespace EmbeddedNetworkLab.UI.Modules.Throughput
 		public ThroughputView()
 		{
 			InitializeComponent();
+		}
+
+		private void Port_PreviewTextInput(object sender, TextCompositionEventArgs e)
+		{
+			// Allow only digits
+			e.Handled = !IsTextNumeric(e.Text);
+		}
+
+		private void Port_Pasting(object sender, DataObjectPastingEventArgs e)
+		{
+			if (e.DataObject.GetDataPresent(DataFormats.Text))
+			{
+				var text = e.DataObject.GetData(DataFormats.Text) as string ?? string.Empty;
+				if (!IsTextNumeric(text))
+					e.CancelCommand();
+			}
+			else
+			{
+				e.CancelCommand();
+			}
+		}
+
+		private static bool IsTextNumeric(string text)
+		{
+			return !string.IsNullOrEmpty(text) && text.All(char.IsDigit);
 		}
 	}
 }
