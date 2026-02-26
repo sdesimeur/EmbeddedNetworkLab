@@ -2,70 +2,213 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EmbeddedNetworkLab.Modules;
 using System.Windows;
+using System.Collections.ObjectModel;
+using System.IO.Ports;
+using System.Linq;
 
 namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 {
 	public partial class SimulatorCentraleViewModel : ModuleViewModel
 	{
-		public override string Name => "Simulator Centrale";
+		public override string Name => "Central Simulator";
 
 		[ObservableProperty]
-		private string? statusText = "Prêt";
+		private string? statusText = "Ready";
 
-		public string StartStopLabel => IsRunning ? "Stop" : "Start";
+		// Collections exposed for binding
+		public ObservableCollection<string> SerialPorts { get; } = new();
+		public ObservableCollection<int> BaudRates { get; } = new();
 
-		[RelayCommand(CanExecute = nameof(CanStart))]
-		private void Start()
+		[ObservableProperty]
+		private string? selectedPort;
+
+		[ObservableProperty]
+		private int selectedBaud = 460800;
+
+		// Indicates the real state of the serial port
+		[ObservableProperty]
+		private bool isPortOpen;
+
+		// Convenience property to enable/disable configuration in the UI
+		public bool IsConfigurationEditable => !IsPortOpen;
+
+		private SerialPort? _serialPort;
+
+		public SimulatorCentraleViewModel()
 		{
-			// Validate or prepare configuration here if needed
+			// Populate common baud rates
+			var commonBauds = new[]
+			{
+				110, 300, 600, 1200, 2400, 4800, 9600,
+				14400, 19200, 38400, 57600, 115200,
+				230400, 460800, 921600
+			};
 
+			foreach (var b in commonBauds)
+				BaudRates.Add(b);
+
+			SelectedBaud = 460800;
+
+			RefreshSerialPorts();
+		}
+
+		public void RefreshSerialPorts()
+		{
+			var previous = SelectedPort;
+
+			SerialPorts.Clear();
+
+			var ports = SerialPort.GetPortNames()
+								  .OrderBy(p => p);
+
+			foreach (var p in ports)
+				SerialPorts.Add(p);
+
+			if (!string.IsNullOrWhiteSpace(previous) && SerialPorts.Contains(previous))
+				SelectedPort = previous;
+			else
+				SelectedPort = SerialPorts.FirstOrDefault();
+		}
+
+		[RelayCommand(CanExecute = nameof(CanOpen))]
+		private void Open()
+		{
+			// Open the serial port first
+			if (string.IsNullOrWhiteSpace(SelectedPort))
+			{
+				StatusText = "Select a serial port before opening.";
+				return;
+			}
+
+			try
+			{
+				_serialPort = new SerialPort(SelectedPort!, SelectedBaud)
+				{
+					ReadTimeout = 1000,
+					WriteTimeout = 1000
+				};
+
+				_serialPort.DataReceived += SerialPort_DataReceived;
+				_serialPort.Open();
+				IsPortOpen = true;
+			}
+			catch (Exception ex)
+			{
+				StatusText = $"Failed to open port {SelectedPort}: {ex.Message}";
+				if (_serialPort != null)
+				{
+					try { _serialPort.DataReceived -= SerialPort_DataReceived; } catch { }
+					try { _serialPort.Dispose(); } catch { }
+				}
+				_serialPort = null;
+				IsPortOpen = false;
+				return;
+			}
+
+			// Then start the module logic
 			if (!TryStart())
 				return;
 
-			StatusText = "En cours";
-			// Démarrage du simulateur : ajouter la logique réelle ici si nécessaire.
+			StatusText = $"Running on {SelectedPort} @ {SelectedBaud}";
 		}
 
-		private bool CanStart()
+		private bool CanOpen()
 		{
-			return !IsRunning;
-		}
-
-		[RelayCommand(CanExecute = nameof(CanStop))]
-		private void Stop()
-		{
-			// Arrêter le simulateur proprement
-			StopExecution();
-			StatusText = "Arrêté";
-		}
-
-		private bool CanStop()
-		{
-			return IsRunning;
-		}
-
-		[RelayCommand(CanExecute = nameof(CanToggle))]
-		private void Toggle()
-		{
+			// Allow open only if a port is selected and not already open or running
 			if (IsRunning)
-				Stop();
-			else
-				Start();
+				return false;
+
+			return !string.IsNullOrWhiteSpace(SelectedPort) && !IsPortOpen;
 		}
 
-		private bool CanToggle()
+		[RelayCommand(CanExecute = nameof(CanClose))]
+		private void Close()
 		{
-			return IsRunning || CanStart();
+			// Stop module logic
+			StopExecution();
+
+			// Close the serial port cleanly if open
+			CloseSerialPort();
+
+			StatusText = "Closed";
+		}
+
+		private bool CanClose()
+		{
+			// Close is allowed if the module is running or if the port is open
+			return IsRunning || IsPortOpen;
+		}
+
+		private void CloseSerialPort()
+		{
+			if (_serialPort == null)
+			{
+				IsPortOpen = false;
+				return;
+			}
+
+			try
+			{
+				if (_serialPort.IsOpen)
+					_serialPort.Close();
+			}
+			catch
+			{
+				// ignore
+			}
+			finally
+			{
+				try { _serialPort.DataReceived -= SerialPort_DataReceived; } catch { }
+				try { _serialPort.Dispose(); } catch { }
+				_serialPort = null;
+				IsPortOpen = false;
+			}
+		}
+
+		// Incoming data handler: simple example that feeds StatusText (UI thread)
+		private void SerialPort_DataReceived(object? sender, SerialDataReceivedEventArgs e)
+		{
+			try
+			{
+				if (sender is not SerialPort sp)
+					return;
+
+				var incoming = sp.ReadExisting();
+				if (string.IsNullOrEmpty(incoming))
+					return;
+
+				Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+				{
+					StatusText = incoming.Length > 200 ? incoming[..200] + "…" : incoming;
+				}));
+			}
+			catch (Exception ex)
+			{
+				Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+				{
+					StatusText = $"[ERROR reading serial port: {ex.Message}]";
+				}));
+			}
+		}
+
+		// Invoked automatically by the source generator when IsPortOpen changes
+		partial void OnIsPortOpenChanged(bool value)
+		{
+			// Update commands and UI
+			OpenCommand.NotifyCanExecuteChanged();
+			CloseCommand.NotifyCanExecuteChanged();
+			OnPropertyChanged(nameof(IsConfigurationEditable));
 		}
 
 		protected override void OnRunningStateChanged(bool isRunning)
 		{
-			// Mettre à jour l'état des commandes et des propriétés liées au démarrage/arrêt
-			StartCommand.NotifyCanExecuteChanged();
-			StopCommand.NotifyCanExecuteChanged();
-			ToggleCommand.NotifyCanExecuteChanged();
-			OnPropertyChanged(nameof(StartStopLabel));
+			// Update command availability when running state changes
+			OpenCommand.NotifyCanExecuteChanged();
+			CloseCommand.NotifyCanExecuteChanged();
 			OnPropertyChanged(nameof(StatusText));
+			// Ensure the port is closed when stopping the module
+			if (!isRunning)
+				CloseSerialPort();
 		}
 	}
 }

@@ -13,43 +13,62 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- En-tête / statut -->
+        <!-- Header / status -->
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,12">
-            <TextBlock Text="Simulator Centrale" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="Central Simulator" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
             <TextBlock Text=" • " Margin="8,0" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"/>
-            <TextBlock Text=" " Width="12"/>
-            <TextBlock Text="{Binding StartStopLabel}" FontStyle="Italic" Foreground="Gray" VerticalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Commandes -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <Button Content="Start" Command="{Binding StartCommand}" Width="100"/>
-            <Button Content="Stop" Command="{Binding StopCommand}" Width="100" Margin="8,0,0,0"/>
-            <Button Content="Toggle" Command="{Binding ToggleCommand}" Width="100" Margin="8,0,0,0"/>
+        <!-- Selection line: ports + baudrates + commands -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+            <!-- Port label + selection -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <ComboBox ItemsSource="{Binding SerialPorts}"
+                          SelectedItem="{Binding SelectedPort, Mode=TwoWay}"
+                          Width="160"
+                          IsEditable="False"
+                          ToolTip="Select serial port"
+                          IsEnabled="{Binding IsConfigurationEditable}"/>
+            </StackPanel>
+
+            <!-- Baudrate label + selection -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                <TextBlock Text="Baud rate:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <ComboBox ItemsSource="{Binding BaudRates}"
+                          SelectedItem="{Binding SelectedBaud, Mode=TwoWay}"
+                          Width="120"
+                          IsEditable="False"
+                          ToolTip="Select baud rate"
+                          IsEnabled="{Binding IsConfigurationEditable}"/>
+            </StackPanel>
+
+            <!-- Commands -->
+            <Button Content="Open" Command="{Binding OpenCommand}" Width="100"/>
+            <Button Content="Close" Command="{Binding CloseCommand}" Width="100" Margin="8,0,0,0"/>
             <TextBlock Text="{Binding IsRunning, StringFormat='Running: {0}'}" Margin="12,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Zone principale : configuration / sortie -->
+        <!-- Main area: configuration / output -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Configuration (placeholders si besoin d'ajouts ultérieurs) -->
+            <!-- Configuration (placeholders for future bindings) -->
             <GroupBox Header="Configuration" Margin="0,0,12,0">
                 <StackPanel Margin="8">
-                    <TextBlock Text="Paramètre A" />
+                    <TextBlock Text="Parameter A" />
                     <TextBox IsEnabled="True" />
-                    <TextBlock Text="Paramètre B" Margin="0,8,0,0"/>
+                    <TextBlock Text="Parameter B" Margin="0,8,0,0"/>
                     <TextBox IsEnabled="True"/>
-                    <!-- Remplacez ou liez ces champs aux propriétés réelles si vous en ajoutez -->
                 </StackPanel>
             </GroupBox>
 
-            <!-- Sortie / journal du simulateur -->
-            <GroupBox Grid.Column="1" Header="Sortie" Margin="0">
+            <!-- Output / simulator log -->
+            <GroupBox Grid.Column="1" Header="Output" Margin="0">
                 <Grid>
                     <TextBox Text="{Binding StatusText}" 
                              IsReadOnly="True" 

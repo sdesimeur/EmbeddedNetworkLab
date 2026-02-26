@@ -28,6 +28,7 @@
             <viewSerial:SerialView />
         </DataTemplate>
 
+        <!-- Template for SimulatorCentrale -->
         <DataTemplate DataType="{x:Type vmSimulator:SimulatorCentraleViewModel}">
             <viewSimulator:SimulatorCentraleView />
         </DataTemplate>
@@ -85,7 +86,7 @@
                 </Border>
             </Grid>
         </Border>
-       </-->
+       -->
 
         <!-- CONSOLE -->
         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
