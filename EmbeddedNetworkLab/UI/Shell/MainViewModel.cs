@@ -5,6 +5,7 @@ using EmbeddedNetworkLab.Infrastructure.Services;
 using EmbeddedNetworkLab.Modules;
 using EmbeddedNetworkLab.UI.Modules.MqttBroker;
 using EmbeddedNetworkLab.UI.Modules.Throughput;
+using EmbeddedNetworkLab.UI.Modules.Serial;
 
 
 
@@ -13,10 +14,13 @@ namespace EmbeddedNetworkLab.UI.Shell
 	public partial class MainViewModel : ObservableObject
 	{
 		private readonly IThroughputService _throughputService;
-        private readonly IMqttBrokerService _mqttBrokerService;
+		private readonly IMqttBrokerService _mqttBrokerService;
 
-        private readonly ThroughputViewModel _throughputModule;
+		private readonly ThroughputViewModel _throughputModule;
 		private readonly MqttBrokerViewModel _mqttBrokerModule;
+
+		private readonly SerialViewModel _leftSerialModel;
+		private readonly SerialViewModel _rightSerialModel;
 
 
         public MainViewModel()
@@ -26,6 +30,12 @@ namespace EmbeddedNetworkLab.UI.Shell
 
 			_mqttBrokerService = new MqttNetBrokerService();
 			_mqttBrokerModule = new MqttBrokerViewModel(_mqttBrokerService);
+
+			_leftSerialModel = new SerialViewModel { Title = "Serial A", SerialText = "Serial A initialized..." };
+			_rightSerialModel = new SerialViewModel { Title = "Serial B", SerialText = "Serial B initialized..." };
+
+			LeftSerial = _leftSerialModel;
+			RightSerial = _rightSerialModel;
         }
 
 		[ObservableProperty]
@@ -36,6 +46,13 @@ namespace EmbeddedNetworkLab.UI.Shell
 
 		[ObservableProperty]
 		private IModule currentModule;
+
+		// Expose the two serial view models for binding in MainWindow
+		[ObservableProperty]
+		private SerialViewModel leftSerial;
+
+		[ObservableProperty]
+		private SerialViewModel rightSerial;
 
 		[RelayCommand]
 		private void OpenThroughput()
