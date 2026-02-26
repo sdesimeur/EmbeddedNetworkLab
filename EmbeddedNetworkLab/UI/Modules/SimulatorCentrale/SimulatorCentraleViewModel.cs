@@ -5,6 +5,8 @@ using System.Windows;
 using System.Collections.ObjectModel;
 using System.IO.Ports;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 {
@@ -15,24 +17,28 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 		[ObservableProperty]
 		private string? statusText = "Ready";
 
-		// Collections exposed for binding
-		public ObservableCollection<string> SerialPorts { get; } = new();
+		// Collection of port items exposed for binding (contains availability info)
+		public ObservableCollection<SerialPortItem> SerialPortItems { get; } = new();
 		public ObservableCollection<int> BaudRates { get; } = new();
 
 		[ObservableProperty]
-		private string? selectedPort;
+		private SerialPortItem? selectedPortItem;
 
 		[ObservableProperty]
 		private int selectedBaud = 460800;
 
-		// Indicates the real state of the serial port
+		// Indicates the real state of the serial port opened by this module
 		[ObservableProperty]
 		private bool isPortOpen;
 
 		// Convenience property to enable/disable configuration in the UI
 		public bool IsConfigurationEditable => !IsPortOpen;
 
+		// Label for the toggle button ("Open" or "Close")
+		public string ToggleLabel => IsPortOpen ? "Close" : "Open";
+
 		private SerialPort? _serialPort;
+		private readonly DispatcherTimer _portScanTimer;
 
 		public SimulatorCentraleViewModel()
 		{
@@ -50,31 +56,177 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 			SelectedBaud = 460800;
 
 			RefreshSerialPorts();
+
+			_portScanTimer = new DispatcherTimer
+			{
+				Interval = System.TimeSpan.FromSeconds(2)
+			};
+			_portScanTimer.Tick += async (_, __) => await ScanPortsAsync();
+			_portScanTimer.Start();
 		}
 
+		// Port item model with availability flags
+		public partial class SerialPortItem : ObservableObject
+		{
+			public SerialPortItem(string name)
+			{
+				Name = name;
+				Present = true;
+				IsUsable = false;
+			}
+
+			public string Name { get; }
+
+			[ObservableProperty]
+			private bool present;
+
+			[ObservableProperty]
+			private bool isUsable;
+
+			public override string ToString() => Name;
+		}
+
+		// Initial refresh: build items from current system ports (and test usability asynchronously)
 		public void RefreshSerialPorts()
 		{
-			var previous = SelectedPort;
+			var current = SerialPort.GetPortNames().OrderBy(p => p).ToArray();
 
-			SerialPorts.Clear();
+			// Keep existing items where possible; add new ones
+			var known = SerialPortItems.ToDictionary(i => i.Name, i => i);
 
-			var ports = SerialPort.GetPortNames()
-								  .OrderBy(p => p);
+			// Mark all known as not present initially
+			foreach (var item in SerialPortItems)
+			{
+				item.Present = false;
+				item.IsUsable = false;
+			}
 
-			foreach (var p in ports)
-				SerialPorts.Add(p);
+			foreach (var name in current)
+			{
+				if (known.TryGetValue(name, out var existing))
+				{
+					existing.Present = true;
+				}
+				else
+				{
+					var it = new SerialPortItem(name) { Present = true, IsUsable = false };
+					SerialPortItems.Add(it);
+				}
+			}
 
-			if (!string.IsNullOrWhiteSpace(previous) && SerialPorts.Contains(previous))
-				SelectedPort = previous;
-			else
-				SelectedPort = SerialPorts.FirstOrDefault();
+			// Remove items that were never present and not the currently selected one (optional)
+			// (We keep missing items so they appear greyed; do not remove them)
+
+			// Start asynchronous usability tests for present ports
+			_ = ScanPortsAsync();
 		}
 
-		[RelayCommand(CanExecute = nameof(CanOpen))]
-		private void Open()
+		// Manual refresh command (source generator produces RefreshPortsCommand)
+		[RelayCommand]
+		private void RefreshPorts() => RefreshSerialPorts();
+
+		// Periodic or manual scan that verifies presence and usability.
+		private async Task ScanPortsAsync()
+		{
+			var currentNames = SerialPort.GetPortNames().OrderBy(n => n).ToArray();
+
+			// Mark presence flags and add new items
+			var existingDict = SerialPortItems.ToDictionary(i => i.Name, i => i);
+
+			// Mark all present=false before re-marking
+			foreach (var item in SerialPortItems)
+			{
+				item.Present = false;
+			}
+
+			foreach (var name in currentNames)
+			{
+				if (!existingDict.TryGetValue(name, out var it))
+				{
+					it = new SerialPortItem(name) { Present = true, IsUsable = false };
+					// add on UI thread
+					Application.Current?.Dispatcher.BeginInvoke(new Action(() => SerialPortItems.Add(it)));
+				}
+				else
+				{
+					// mark present
+					Application.Current?.Dispatcher.BeginInvoke(new Action(() => it.Present = true));
+				}
+
+				// Test usability asynchronously and set IsUsable accordingly
+				_ = Task.Run(async () =>
+				{
+					var usable = await TestPortUsableAsync(name, SelectedBaud);
+					Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+					{
+						// update the corresponding item (it may have been added in the meantime)
+						var item = SerialPortItems.FirstOrDefault(i => i.Name == name);
+						if (item != null)
+							item.IsUsable = usable;
+					}));
+				});
+			}
+
+			// For items not present in currentNames, ensure IsUsable=false
+			foreach (var item in SerialPortItems.Where(i => !currentNames.Contains(i.Name)).ToArray())
+			{
+				Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+				{
+					item.Present = false;
+					item.IsUsable = false;
+				}));
+			}
+		}
+
+		// Quick test whether the port can be opened. Non-blocking because called from Task.Run.
+		private static Task<bool> TestPortUsableAsync(string portName, int baud)
+		{
+			return Task.Run(() =>
+			{
+				try
+				{
+					using var sp = new SerialPort(portName, baud)
+					{
+						ReadTimeout = 200,
+						WriteTimeout = 200
+					};
+					sp.Open();
+					// If open succeeded, close immediately
+					sp.Close();
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			});
+		}
+
+		// Toggle command: open if closed, close if open
+		[RelayCommand(CanExecute = nameof(CanToggle))]
+		private void Toggle()
+		{
+			if (IsPortOpen)
+				PerformClose();
+			else
+				PerformOpen();
+		}
+
+		private bool CanToggle()
+		{
+			// Allow close when port is open.
+			if (IsPortOpen)
+				return true;
+
+			// Allow open when a usable port is selected and module not running.
+			return !IsRunning && SelectedPortItem != null && SelectedPortItem.Present && SelectedPortItem.IsUsable;
+		}
+
+		// Helper: open selected serial port and start module
+		private void PerformOpen()
 		{
 			// Open the serial port first
-			if (string.IsNullOrWhiteSpace(SelectedPort))
+			if (SelectedPortItem == null || string.IsNullOrWhiteSpace(SelectedPortItem.Name))
 			{
 				StatusText = "Select a serial port before opening.";
 				return;
@@ -82,7 +234,7 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 
 			try
 			{
-				_serialPort = new SerialPort(SelectedPort!, SelectedBaud)
+				_serialPort = new SerialPort(SelectedPortItem.Name, SelectedBaud)
 				{
 					ReadTimeout = 1000,
 					WriteTimeout = 1000
@@ -94,7 +246,7 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 			}
 			catch (Exception ex)
 			{
-				StatusText = $"Failed to open port {SelectedPort}: {ex.Message}";
+				StatusText = $"Failed to open port {SelectedPortItem.Name}: {ex.Message}";
 				if (_serialPort != null)
 				{
 					try { _serialPort.DataReceived -= SerialPort_DataReceived; } catch { }
@@ -109,34 +261,15 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 			if (!TryStart())
 				return;
 
-			StatusText = $"Running on {SelectedPort} @ {SelectedBaud}";
+			StatusText = $"Running on {SelectedPortItem.Name} @ {SelectedBaud}";
 		}
 
-		private bool CanOpen()
+		// Helper: close port and stop module
+		private void PerformClose()
 		{
-			// Allow open only if a port is selected and not already open or running
-			if (IsRunning)
-				return false;
-
-			return !string.IsNullOrWhiteSpace(SelectedPort) && !IsPortOpen;
-		}
-
-		[RelayCommand(CanExecute = nameof(CanClose))]
-		private void Close()
-		{
-			// Stop module logic
 			StopExecution();
-
-			// Close the serial port cleanly if open
 			CloseSerialPort();
-
 			StatusText = "Closed";
-		}
-
-		private bool CanClose()
-		{
-			// Close is allowed if the module is running or if the port is open
-			return IsRunning || IsPortOpen;
 		}
 
 		private void CloseSerialPort()
@@ -195,17 +328,23 @@ namespace EmbeddedNetworkLab.UI.Modules.SimulatorCentrale
 		partial void OnIsPortOpenChanged(bool value)
 		{
 			// Update commands and UI
-			OpenCommand.NotifyCanExecuteChanged();
-			CloseCommand.NotifyCanExecuteChanged();
+			ToggleCommand.NotifyCanExecuteChanged();
 			OnPropertyChanged(nameof(IsConfigurationEditable));
+			OnPropertyChanged(nameof(ToggleLabel));
+		}
+
+		// Notify toggle availability when selected port changes
+		partial void OnSelectedPortItemChanged(SerialPortItem? value)
+		{
+			ToggleCommand.NotifyCanExecuteChanged();
 		}
 
 		protected override void OnRunningStateChanged(bool isRunning)
 		{
 			// Update command availability when running state changes
-			OpenCommand.NotifyCanExecuteChanged();
-			CloseCommand.NotifyCanExecuteChanged();
+			ToggleCommand.NotifyCanExecuteChanged();
 			OnPropertyChanged(nameof(StatusText));
+
 			// Ensure the port is closed when stopping the module
 			if (!isRunning)
 				CloseSerialPort();

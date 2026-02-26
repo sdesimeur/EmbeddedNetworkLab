@@ -22,15 +22,45 @@
 
         <!-- Selection line: ports + baudrates + commands -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
-            <!-- Port label + selection -->
+            <!-- Port label + selection + refresh -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
                 <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <ComboBox ItemsSource="{Binding SerialPorts}"
-                          SelectedItem="{Binding SelectedPort, Mode=TwoWay}"
+                <ComboBox ItemsSource="{Binding SerialPortItems}"
+                          SelectedItem="{Binding SelectedPortItem, Mode=TwoWay}"
+                          DisplayMemberPath="Name"
                           Width="160"
                           IsEditable="False"
                           ToolTip="Select serial port"
-                          IsEnabled="{Binding IsConfigurationEditable}"/>
+                          IsEnabled="{Binding IsConfigurationEditable}">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Foreground" Value="Black"/>
+                            <Setter Property="IsEnabled" Value="True"/>
+
+                            <Style.Triggers>
+                                <!-- If not present, grey & disable -->
+                                <DataTrigger Binding="{Binding Present}" Value="False">
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+
+                                <!-- If not usable, grey & disable -->
+                                <DataTrigger Binding="{Binding IsUsable}" Value="False">
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                </ComboBox>
+                <!-- Small refresh button -->
+                <Button Content="⟳"
+                        ToolTip="Refresh ports"
+                        Command="{Binding RefreshPortsCommand}"
+                        Width="28"
+                        Height="24"
+                        Margin="6,0,0,0"
+                        IsEnabled="{Binding IsConfigurationEditable}"/>
             </StackPanel>
 
             <!-- Baudrate label + selection -->
@@ -44,9 +74,8 @@
                           IsEnabled="{Binding IsConfigurationEditable}"/>
             </StackPanel>
 
-            <!-- Commands -->
-            <Button Content="Open" Command="{Binding OpenCommand}" Width="100"/>
-            <Button Content="Close" Command="{Binding CloseCommand}" Width="100" Margin="8,0,0,0"/>
+            <!-- Single toggle command button -->
+            <Button Content="{Binding ToggleLabel}" Command="{Binding ToggleCommand}" Width="100"/>
             <TextBlock Text="{Binding IsRunning, StringFormat='Running: {0}'}" Margin="12,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
