@@ -11,7 +11,7 @@
         xmlns:vmSerial="clr-namespace:EmbeddedNetworkLab.UI.Modules.Serial"
         xmlns:viewSerial="clr-namespace:EmbeddedNetworkLab.UI.Modules.Serial"
         mc:Ignorable="d"
-        Title="Embedded Network Lab" Height="916" Width="865">
+        Title="Embedded Network Lab" Height="916" Width="900">
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type vmThroughput:ThroughputViewModel}">
@@ -45,7 +45,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- NAVIGATION PANEL -->
-        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Background="#F3F3F3" BorderBrush="#DDDDDD" BorderThickness="0,0,1,1">
+        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="1" Background="#F3F3F3" BorderBrush="#DDDDDD" BorderThickness="0,0,1,1">
             <StackPanel Margin="10">
                 <TextBlock Text="Modules" FontWeight="Bold" Margin="0,0,0,10"/>
 

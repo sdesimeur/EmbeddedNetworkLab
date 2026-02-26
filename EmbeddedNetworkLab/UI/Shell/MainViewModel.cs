@@ -31,8 +31,12 @@ namespace EmbeddedNetworkLab.UI.Shell
 			_mqttBrokerService = new MqttNetBrokerService();
 			_mqttBrokerModule = new MqttBrokerViewModel(_mqttBrokerService);
 
-			_leftSerialModel = new SerialViewModel { Title = "Serial A", SerialText = "Serial A initialized..." };
-			_rightSerialModel = new SerialViewModel { Title = "Serial B", SerialText = "Serial B initialized..." };
+			_leftSerialModel = new SerialViewModel { Title = "Serial A", SerialText = "" };
+			_rightSerialModel = new SerialViewModel { Title = "Serial B", SerialText = "" };
+
+			// Subscribe serial VM log events to the shell console.
+			_leftSerialModel.LogEmitted += (s, msg) => AppendLog(msg);
+			_rightSerialModel.LogEmitted += (s, msg) => AppendLog(msg);
 
 			LeftSerial = _leftSerialModel;
 			RightSerial = _rightSerialModel;
@@ -68,7 +72,7 @@ namespace EmbeddedNetworkLab.UI.Shell
             AppendLog(CurrentModule.Name + " selected");
         }
 
-        // Method to append log messages to the console
+        // Method to append log messages to the console (adds its own timestamp)
         private void AppendLog(string message)
 		{
 			ConsoleText += $"\n[{DateTime.Now:HH:mm:ss}] {message}";
