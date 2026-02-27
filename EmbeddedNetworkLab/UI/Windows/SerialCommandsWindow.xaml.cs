@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text.Json;
+using EmbeddedNetworkLab.Core.Models;
 using Microsoft.Win32;
 
 namespace EmbeddedNetworkLab.UI.Windows
@@ -29,12 +30,26 @@ namespace EmbeddedNetworkLab.UI.Windows
 		public SerialCommandsWindow()
 		{
 			InitializeComponent();
-			// Use executable directory for config and commands files
-			_appDir = AppContext.BaseDirectory;
-			_configPath = Path.Combine(_appDir, "config.json");
-			_defaultCommandsPath = Path.Combine(_appDir, "serial_commands.json");
+            // Use central AppConfigService when available
+            var svc = Application.Current is App app ? app.AppConfigService : null;
+            if (svc != null)
+            {
+                _appDir = svc.AppDirectory;
+                _configPath = svc.ConfigPath;
+                _defaultCommandsPath = svc.DefaultCommandsPath;
+                // load using service
+                var path = svc.EnsureAndGetCommandsFile();
+                LoadCommandsFromPath(path);
+            }
+            else
+            {
+                // fallback to previous local logic
+                _appDir = AppContext.BaseDirectory;
+                _configPath = Path.Combine(_appDir, "config.json");
+                _defaultCommandsPath = Path.Combine(_appDir, "serial_commands.json");
 
-			EnsureAppFilesAndLoad();
+                EnsureAppFilesAndLoad();
+            }
 			LoadSerialPorts();
 
 			// Ensure per-row Send buttons initial state
@@ -347,9 +362,16 @@ namespace EmbeddedNetworkLab.UI.Windows
 					var json = JsonSerializer.Serialize(list, opts);
 					File.WriteAllText(dlg.FileName, json);
 					SetStatus($"Saved {list.Count} entries", Brushes.Green);
-					// remember last used file
-					_config.LastCommandsFile = dlg.FileName;
-					SaveConfig();
+					// remember last used file via central service if available
+					if (Application.Current is App app)
+					{
+						app.AppConfigService.SaveCommandsToPath(list, dlg.FileName);
+					}
+					else
+					{
+						_config.LastCommandsFile = dlg.FileName;
+						SaveConfig();
+					}
 				}
 				catch (Exception ex)
 				{
@@ -358,11 +380,7 @@ namespace EmbeddedNetworkLab.UI.Windows
 			}
 		}
 
-		private class CommandEntry
-		{
-			public string Name { get; set; } = string.Empty;
-			public string Value { get; set; } = string.Empty;
-		}
+		// Using shared model
 
 		private class AppConfig
 		{
@@ -451,6 +469,26 @@ namespace EmbeddedNetworkLab.UI.Windows
 			}
 		}
 
+		private void ApplyCommandListToUi(List<CommandEntry> list)
+		{
+			for (int i = 1; i <= 10; i++)
+			{
+				var nameBox = FindName($"NameTextBox{i}") as TextBox;
+				var valueBox = FindName($"ValueTextBox{i}") as TextBox;
+				if (nameBox == null || valueBox == null) continue;
+				if (i - 1 < list.Count)
+				{
+					nameBox.Text = list[i - 1].Name ?? string.Empty;
+					valueBox.Text = list[i - 1].Value ?? string.Empty;
+				}
+				else
+				{
+					nameBox.Text = string.Empty;
+					valueBox.Text = string.Empty;
+				}
+			}
+		}
+
 		private void LoadCommandsButton_Click(object sender, RoutedEventArgs e)
 		{
 			var dlg = new OpenFileDialog
@@ -464,30 +502,22 @@ namespace EmbeddedNetworkLab.UI.Windows
 			{
 				try
 				{
-					var json = File.ReadAllText(dlg.FileName);
-					var list = JsonSerializer.Deserialize<List<CommandEntry>>(json) ?? new List<CommandEntry>();
-
-					for (int i = 1; i <= 10; i++)
+					if (Application.Current is App app)
 					{
-						var nameBox = FindName($"NameTextBox{i}") as TextBox;
-						var valueBox = FindName($"ValueTextBox{i}") as TextBox;
-						if (nameBox == null || valueBox == null) continue;
-						if (i - 1 < list.Count)
-						{
-							nameBox.Text = list[i - 1].Name ?? string.Empty;
-							valueBox.Text = list[i - 1].Value ?? string.Empty;
-						}
-						else
-						{
-							nameBox.Text = string.Empty;
-							valueBox.Text = string.Empty;
-						}
+						var list = app.AppConfigService.LoadCommandsFromPath(dlg.FileName);
+						ApplyCommandListToUi(list);
+						SetStatus($"Loaded {list.Count} entries", Brushes.Green);
 					}
-
-					SetStatus($"Loaded {list.Count} entries", Brushes.Green);
-					// remember last used file
-					_config.LastCommandsFile = dlg.FileName;
-					SaveConfig();
+					else
+					{
+						var json = File.ReadAllText(dlg.FileName);
+						var list = JsonSerializer.Deserialize<List<CommandEntry>>(json) ?? new List<CommandEntry>();
+						ApplyCommandListToUi(list);
+						SetStatus($"Loaded {list.Count} entries", Brushes.Green);
+						// remember last used file
+						_config.LastCommandsFile = dlg.FileName;
+						SaveConfig();
+					}
 				}
 				catch (Exception ex)
 				{
