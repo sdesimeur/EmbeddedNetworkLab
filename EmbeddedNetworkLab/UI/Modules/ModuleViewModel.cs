@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using EmbeddedNetworkLab.Modules;
+using System;
 
 namespace EmbeddedNetworkLab.UI.Modules
 {
@@ -9,6 +10,11 @@ namespace EmbeddedNetworkLab.UI.Modules
 
 		[ObservableProperty]
 		private bool isRunning;
+
+		/// <summary>
+		/// Notifies listeners when running state changes.
+		/// </summary>
+		public event Action<bool>? RunningStateChanged;
 
 		protected bool TryStart()
 		{
@@ -34,6 +40,7 @@ namespace EmbeddedNetworkLab.UI.Modules
 		// Allow derived classes to override this method to react to changes in the running state
 		protected virtual void OnRunningStateChanged(bool isRunning)
 		{
+			RunningStateChanged?.Invoke(isRunning);
 		}
 	}
 }

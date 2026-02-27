@@ -4,7 +4,7 @@ using EmbeddedNetworkLab.Core;
 
 namespace EmbeddedNetworkLab.Infrastructure.Services
 {
-	public class ThroughputService : IThroughputService
+	public class ThroughputService : ITcpClientService
 	{
 		public event Action<double>? RateUpdated;
 

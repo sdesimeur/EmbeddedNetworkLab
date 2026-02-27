@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows.Controls;
 
-namespace EmbeddedNetworkLab.UI.Modules.Throughput
+namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 {
 	public class IntRangeValidationRule : ValidationRule
 	{

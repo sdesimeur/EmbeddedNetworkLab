@@ -4,7 +4,7 @@ using EmbeddedNetworkLab.Core;
 using EmbeddedNetworkLab.Infrastructure.Services;
 using EmbeddedNetworkLab.Modules;
 using EmbeddedNetworkLab.UI.Modules.MqttBroker;
-using EmbeddedNetworkLab.UI.Modules.Throughput;
+using EmbeddedNetworkLab.UI.Modules.TcpClient;
 using EmbeddedNetworkLab.UI.Modules.Serial;
 using EmbeddedNetworkLab.UI.Modules.SimulatorCentrale;
 using EmbeddedNetworkLab.UI.Windows;
@@ -14,29 +14,42 @@ namespace EmbeddedNetworkLab.UI.Shell
 {
 	public partial class MainViewModel : ObservableObject
 	{
-		private readonly IThroughputService _throughputService;
+		private readonly ITcpClientService _tcpClientService;
 		private readonly IMqttBrokerService _mqttBrokerService;
 
-		private readonly ThroughputViewModel _throughputModule;
-		private readonly MqttBrokerViewModel _mqttBrokerModule;
-		private readonly SimulatorCentraleViewModel _simulatorCentraleModule;
+		// concrete instances kept for wiring module-specific events
+		private readonly TcpClientViewModel _tcpClientModuleInstance;
+		private readonly MqttBrokerViewModel _mqttBrokerModuleInstance;
+		private readonly SimulatorCentraleViewModel _simulatorCentraleModuleInstance;
+
+		// Exposed bindable module properties (for XAML bindings)
+		[ObservableProperty]
+		private IModule tcpClientModule;
+
+		[ObservableProperty]
+		private IModule mqttBrokerModule;
+
+		[ObservableProperty]
+		private IModule simulatorCentraleModule;
 
 		private readonly SerialViewModel _leftSerialModel;
 
-
         public MainViewModel()
 		{
-			_throughputService = new ThroughputService();
-			_throughputModule = new ThroughputViewModel(_throughputService);
+			_tcpClientService = new ThroughputService();
+			_tcpClientModuleInstance = new TcpClientViewModel(_tcpClientService);
+			TcpClientModule = _tcpClientModuleInstance;
 
 			_mqttBrokerService = new MqttNetBrokerService();
-			_mqttBrokerModule = new MqttBrokerViewModel(_mqttBrokerService);
+			_mqttBrokerModuleInstance = new MqttBrokerViewModel(_mqttBrokerService);
+			MqttBrokerModule = _mqttBrokerModuleInstance;
 
-			_simulatorCentraleModule = new SimulatorCentraleViewModel();
+			_simulatorCentraleModuleInstance = new SimulatorCentraleViewModel();
+			SimulatorCentraleModule = _simulatorCentraleModuleInstance;
 
 			// Subscribe simulator logs to the shell console, include module name
-			_simulatorCentraleModule.LogEmitted += (s, msg) =>
-				AppendLog(msg, (s as IModule)?.Name ?? _simulatorCentraleModule.Name);
+			_simulatorCentraleModuleInstance.LogEmitted += (s, msg) =>
+				AppendLog(msg, (s as IModule)?.Name ?? _simulatorCentraleModuleInstance.Name);
 
 			_leftSerialModel = new SerialViewModel { Title = "THW", SerialText = "" };
 
@@ -61,24 +74,24 @@ namespace EmbeddedNetworkLab.UI.Shell
 		private SerialViewModel leftSerial;
 
 		[RelayCommand]
-		private void OpenThroughput()
+		private void OpenTcpClient()
 		{
-			CurrentModule = _throughputModule;
-			AppendLog("selected", _throughputModule.Name);
+			CurrentModule = _tcpClientModuleInstance;
+			AppendLog("selected", _tcpClientModuleInstance.Name);
 		}
 
         [RelayCommand]
         private void OpenMqttBroker()
         {
-            CurrentModule = _mqttBrokerModule;
-            AppendLog("selected", _mqttBrokerModule.Name);
+            CurrentModule = _mqttBrokerModuleInstance;
+            AppendLog("selected", _mqttBrokerModuleInstance.Name);
         }
 
         [RelayCommand]
 		private void OpenSimulatorCentrale()
 		{
-			CurrentModule = _simulatorCentraleModule;
-			AppendLog("selected", _simulatorCentraleModule.Name);
+			CurrentModule = _simulatorCentraleModuleInstance;
+			AppendLog("selected", _simulatorCentraleModuleInstance.Name);
 		}
 
 		// Opens the SerialCommandsWindow when the corresponding command is executed.

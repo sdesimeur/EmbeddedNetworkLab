@@ -3,13 +3,13 @@ using CommunityToolkit.Mvvm.Input;
 using EmbeddedNetworkLab.Core;
 using System.Windows;
 
-namespace EmbeddedNetworkLab.UI.Modules.Throughput
+namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 {
-	public partial class ThroughputViewModel : ModuleViewModel
+	public partial class TcpClientViewModel : ModuleViewModel
 	{
-		private readonly IThroughputService _service;
+		private readonly ITcpClientService _service;
 
-		public override string Name => "Throughput Test";
+		public override string Name => "Tcp Client Test";
 
 		[ObservableProperty]
 		private double currentRate;
@@ -29,7 +29,7 @@ namespace EmbeddedNetworkLab.UI.Modules.Throughput
 		// New: the toggle button is enabled when running (to allow stop) OR when the port text is valid (to allow start)
 		public bool IsToggleEnabled => IsRunning || IsPortValid();
 
-		public ThroughputViewModel(IThroughputService service)
+		public TcpClientViewModel(ITcpClientService service)
 		{
 			_service = service;
 

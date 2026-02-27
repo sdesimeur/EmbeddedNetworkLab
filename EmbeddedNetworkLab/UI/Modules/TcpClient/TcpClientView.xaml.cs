@@ -4,14 +4,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace EmbeddedNetworkLab.UI.Modules.Throughput
+namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 {
 	/// <summary>
-	/// Interaction logic for ThroughputView.xaml
+	/// Interaction logic for TcpClientView.xaml
 	/// </summary>
-	public partial class ThroughputView : UserControl
+	public partial class TcpClientView : UserControl
 	{
-		public ThroughputView()
+		public TcpClientView()
 		{
 			InitializeComponent();
 		}

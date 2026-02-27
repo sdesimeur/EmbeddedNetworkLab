@@ -2,7 +2,7 @@
 
 namespace EmbeddedNetworkLab.Core
 {
-	public interface IThroughputService
+	public interface ITcpClientService
 	{
 		event Action<double>? RateUpdated;
 
