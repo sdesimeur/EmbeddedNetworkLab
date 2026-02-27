@@ -8,11 +8,8 @@
         Title="SerialCommandsWindow" Height="800" Width="700">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <!-- Configuration section -->
             <RowDefinition Height="Auto" />
-            <!-- Command section -->
             <RowDefinition Height="Auto" />
-            <!-- Reception section (fills remaining space) -->
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -42,7 +39,6 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Vertical">
-                        <!-- Row: Port combobox + Refresh icon button -->
                         <Grid Margin="0,0,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -55,7 +51,6 @@
                                       IsEditable="False"
                                       ToolTip="Select a serial port" />
 
-                            <!-- Icon button: using a Unicode refresh glyph -->
                             <Button x:Name="RefreshPortsButton"
                                     Grid.Column="1"
                                     Width="34"
@@ -82,26 +77,81 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right">
-                        <!-- Toggle button: text changes between Open / Close -->
                         <Button x:Name="ConnectButton" Content="Open" Width="90" Margin="8,0,0,6" Click="ConnectButton_Click"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
         </Border>
 
-        <!-- Command section -->
+        <!-- Command section: 10 rows Name + Value + Send -->
         <Border Grid.Row="1" Padding="8" Margin="0,0,0,8" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
             <StackPanel>
                 <TextBlock Text="Commande" FontWeight="Bold" Margin="0,0,0,8" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="360">
+                    <UniformGrid Columns="1" Rows="10" Margin="0" IsItemsHost="False">
+                        <!-- Generate 10 rows manually -->
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <!-- Removed PlaceholderText property, added ToolTip for hint -->
+                            <TextBox x:Name="NameTextBox1" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 1"/>
+                            <TextBox x:Name="ValueTextBox1" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton1" Content="Send" Width="64" Click="SendRowButton_Click" Tag="1" />
+                        </StackPanel>
 
-                    <TextBox x:Name="CommandTextBox" Grid.Column="0" MinHeight="30" VerticalAlignment="Center" Margin="0,0,8,0" />
-                    <Button x:Name="SendCommandButton" Grid.Column="1" Content="Send" Width="80" />
-                </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox2" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 2"/>
+                            <TextBox x:Name="ValueTextBox2" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton2" Content="Send" Width="64" Click="SendRowButton_Click" Tag="2" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox3" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 3"/>
+                            <TextBox x:Name="ValueTextBox3" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton3" Content="Send" Width="64" Click="SendRowButton_Click" Tag="3" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox4" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 4"/>
+                            <TextBox x:Name="ValueTextBox4" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton4" Content="Send" Width="64" Click="SendRowButton_Click" Tag="4" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox5" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 5"/>
+                            <TextBox x:Name="ValueTextBox5" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton5" Content="Send" Width="64" Click="SendRowButton_Click" Tag="5" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox6" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 6"/>
+                            <TextBox x:Name="ValueTextBox6" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton6" Content="Send" Width="64" Click="SendRowButton_Click" Tag="6" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox7" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 7"/>
+                            <TextBox x:Name="ValueTextBox7" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton7" Content="Send" Width="64" Click="SendRowButton_Click" Tag="7" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox8" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 8"/>
+                            <TextBox x:Name="ValueTextBox8" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton8" Content="Send" Width="64" Click="SendRowButton_Click" Tag="8" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox9" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 9"/>
+                            <TextBox x:Name="ValueTextBox9" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton9" Content="Send" Width="64" Click="SendRowButton_Click" Tag="9" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox x:Name="NameTextBox10" MinWidth="140" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Name 10"/>
+                            <TextBox x:Name="ValueTextBox10" MinWidth="260" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <Button x:Name="SendRowButton10" Content="Send" Width="64" Click="SendRowButton_Click" Tag="10" />
+                        </StackPanel>
+                    </UniformGrid>
+                </ScrollViewer>
             </StackPanel>
         </Border>
 

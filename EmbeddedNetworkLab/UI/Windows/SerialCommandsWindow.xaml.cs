@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Linq;
 using System.IO.Ports;
 using System.Windows;
@@ -20,9 +21,8 @@ namespace EmbeddedNetworkLab.UI.Windows
 			InitializeComponent();
 			LoadSerialPorts();
 
-			// Ensure Send button wired and initially disabled
-			SendCommandButton.Click += SendCommandButton_Click;
-			SendCommandButton.IsEnabled = false;
+			// Ensure per-row Send buttons initial state
+			SetRowSendEnabled(false);
 		}
 
 		private void LoadSerialPorts()
@@ -105,9 +105,7 @@ namespace EmbeddedNetworkLab.UI.Windows
 				// Disable selectors while open
 				PortComboBox.IsEnabled = false;
 				BaudrateComboBox.IsEnabled = false;
-
-				// Enable send
-				SendCommandButton.IsEnabled = true;
+				SetRowSendEnabled(true);
 			}
 			catch (Exception ex)
 			{
@@ -140,9 +138,7 @@ namespace EmbeddedNetworkLab.UI.Windows
 				// Re-enable selectors
 				PortComboBox.IsEnabled = true;
 				BaudrateComboBox.IsEnabled = true;
-
-				// Disable send
-				SendCommandButton.IsEnabled = false;
+				SetRowSendEnabled(false);
 			}
 			catch (Exception ex)
 			{
@@ -173,11 +169,13 @@ namespace EmbeddedNetworkLab.UI.Windows
 			}
 		}
 
+
+
 		/// <summary>
-		/// Parse the user hex input and send raw bytes to the opened serial port.
-		/// Accepts inputs like: "0A 1B FF", "0x0A,0x1B,0xFF", "0A1BFF" (even length).
+		/// Handler for individual row Send buttons. Tag must contain the row index (1..10).
+		/// ValueTextBox{n} content is parsed as hex and sent raw.
 		/// </summary>
-		private void SendCommandButton_Click(object? sender, RoutedEventArgs e)
+		private void SendRowButton_Click(object? sender, RoutedEventArgs e)
 		{
 			if (_serialPort is null || !_serialPort.IsOpen)
 			{
@@ -185,7 +183,27 @@ namespace EmbeddedNetworkLab.UI.Windows
 				return;
 			}
 
-			var input = CommandTextBox.Text ?? string.Empty;
+			if (sender is not Button btn || btn.Tag is null)
+			{
+				SetStatus("Invalid send button", Brushes.Red);
+				return;
+			}
+
+			var idx = btn.Tag.ToString();
+			if (string.IsNullOrEmpty(idx))
+			{
+				SetStatus("Invalid button tag", Brushes.Red);
+				return;
+			}
+
+			var valueBox = FindName($"ValueTextBox{idx}") as TextBox;
+			if (valueBox == null)
+			{
+				SetStatus("Value box not found", Brushes.Red);
+				return;
+			}
+
+			var input = valueBox.Text ?? string.Empty;
 			if (string.IsNullOrWhiteSpace(input))
 			{
 				SetStatus("Empty command", Brushes.Red);
@@ -202,11 +220,8 @@ namespace EmbeddedNetworkLab.UI.Windows
 			try
 			{
 				_serialPort.Write(bytes, 0, bytes.Length);
-
-				// Optionally show what was sent in the reception box for traceability
 				ReceptionTextBox.AppendText($"[Sent {DateTime.Now:HH:mm:ss}] {BitConverter.ToString(bytes)}\n");
 				ReceptionTextBox.ScrollToEnd();
-
 				SetStatus($"Sent {bytes.Length} bytes", Brushes.Green);
 			}
 			catch (Exception ex)
@@ -242,7 +257,7 @@ namespace EmbeddedNetworkLab.UI.Windows
 					if (tok.Length == 0 || tok.Length > 2)
 						return null;
 
-					if (!byte.TryParse(tok, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
+					if (!byte.TryParse(tok, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
 						return null;
 
 					bytes[i] = b;
@@ -264,7 +279,7 @@ namespace EmbeddedNetworkLab.UI.Windows
 			for (int i = 0; i < outBytes.Length; i++)
 			{
 				var pair = cleaned.Substring(i * 2, 2);
-				if (!byte.TryParse(pair, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
+				if (!byte.TryParse(pair, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
 					return null;
 				outBytes[i] = b;
 			}
@@ -276,6 +291,16 @@ namespace EmbeddedNetworkLab.UI.Windows
 		{
 			ConnectionStatusText.Text = text;
 			ConnectionStatusText.Foreground = color;
+		}
+
+		private void SetRowSendEnabled(bool enabled)
+		{
+			for (int i = 1; i <= 10; i++)
+			{
+				var btn = FindName($"SendRowButton{i}") as Button;
+				if (btn != null)
+					btn.IsEnabled = enabled;
+			}
 		}
 
 		protected override void OnClosed(EventArgs e)
