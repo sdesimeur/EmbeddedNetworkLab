@@ -21,6 +21,14 @@
             <StackPanel>
                 <TextBlock Text="Configuration" FontWeight="Bold" Margin="0,0,0,8" />
 
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock x:Name="ConnectionStatusText" Text="Disconnected" Foreground="Red" HorizontalAlignment="Center"/>
+                </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -76,7 +84,6 @@
                     <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Right">
                         <!-- Toggle button: text changes between Open / Close -->
                         <Button x:Name="ConnectButton" Content="Open" Width="90" Margin="8,0,0,6" Click="ConnectButton_Click"/>
-                        <TextBlock x:Name="ConnectionStatusText" Text="Disconnected" Foreground="Red" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
