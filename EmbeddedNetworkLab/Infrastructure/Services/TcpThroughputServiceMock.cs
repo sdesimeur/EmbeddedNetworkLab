@@ -4,7 +4,7 @@ using EmbeddedNetworkLab.Core;
 
 namespace EmbeddedNetworkLab.Infrastructure.Services
 {
-	public class TcpClientServiceMock : ITcpThroughputService
+	public class TcpThroughputServiceMock : ITcpThroughputService
 	{
 		public event Action<double>? RateUpdated;
 
