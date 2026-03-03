@@ -22,7 +22,7 @@ namespace EmbeddedNetworkLab.UI.Shell
 
 			InitializeComponent();
 
-			var tcpService = new TcpClientService();
+			var tcpService = new TcpThroughputService();
 
 			DataContext = new MainViewModel(tcpService);
 		}

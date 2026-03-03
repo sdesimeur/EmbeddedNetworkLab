@@ -14,8 +14,10 @@ namespace EmbeddedNetworkLab.UI.Shell
 {
 	public partial class MainViewModel : ObservableObject
 	{
-		private readonly ITcpClientService _tcpClientService;
+		// Services injected via constructor
+		private readonly ITcpThroughputService _tcpClientService;
 		private readonly IMqttBrokerService _mqttBrokerService;
+		private readonly ITcpReachabilityService _tcpReachabilityService = new TcpReachabilityService();
 
 		// concrete instances kept for wiring module-specific events
 		private readonly TcpClientViewModel _tcpClientModuleInstance;
@@ -34,10 +36,11 @@ namespace EmbeddedNetworkLab.UI.Shell
 
 		private readonly SerialViewModel _leftSerialModel;
 
-        public MainViewModel(ITcpClientService tcpClientService)
+        public MainViewModel(ITcpThroughputService tcpClientService)
 		{
 			_tcpClientService = tcpClientService;
-			_tcpClientModuleInstance = new TcpClientViewModel(_tcpClientService);
+
+			_tcpClientModuleInstance = new TcpClientViewModel(_tcpClientService, _tcpReachabilityService);
 			TcpClientModule = _tcpClientModuleInstance;
 
 			_mqttBrokerService = new MqttNetBrokerService();
