@@ -12,16 +12,13 @@ public sealed class TcpThroughputService : ITcpThroughputService
 
 	private CancellationTokenSource? _cts;
 	private Task? _task;
+	private TcpThroughputConfig? _config;
 
-	private string _address = "127.0.0.1";
-	private int _port = 8080;
-
-	public void Configure(string address, int port)
+	public void Configure(TcpThroughputConfig config)
 	{
 		lock (_sync)
 		{
-			_address = address;
-			_port = port;
+			_config = config;
 		}
 	}
 
@@ -79,10 +76,22 @@ public sealed class TcpThroughputService : ITcpThroughputService
 	{
 		try
 		{
+			TcpThroughputConfig? config;
+			lock (_sync)
+			{
+				config = _config;
+			}
+
+			if (config is null || string.IsNullOrEmpty(config.Address))
+			{
+				RateUpdated?.Invoke(0);
+				return;
+			}
+
 			using var client = new TcpClient();
 			client.NoDelay = true;
 
-			await client.ConnectAsync(_address, _port, token);
+			await client.ConnectAsync(host: config.Address, port: config.Port, cancellationToken: token);
 
 			using NetworkStream stream = client.GetStream();
 
@@ -105,7 +114,7 @@ public sealed class TcpThroughputService : ITcpThroughputService
 
 				long currentTime = sw.ElapsedMilliseconds;
 
-				if (currentTime - lastTime >= 500)
+				if (currentTime - lastTime >= config.SamplePeriod.TotalMilliseconds)
 				{
 					long deltaBytes = bytesSent - lastBytes;
 					double seconds = (currentTime - lastTime) / 1000.0;
