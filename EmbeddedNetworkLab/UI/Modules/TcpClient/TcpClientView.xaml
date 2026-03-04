@@ -68,8 +68,7 @@
             </StackPanel>
 
             <lvc:CartesianChart Height="180"
-                   Series="{Binding ThroughputSeries}" 
-                   AnimationsSpeed="0:0:0" />
+                   Series="{Binding ThroughputSeries}"/>
             
         </StackPanel>
     </Grid>

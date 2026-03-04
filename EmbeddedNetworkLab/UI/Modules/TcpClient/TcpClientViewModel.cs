@@ -68,7 +68,8 @@ namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 				Values = ThroughputValues,
 				Fill = null,
 				GeometrySize = 0,
-				LineSmoothness = 0
+				LineSmoothness = 0,
+				AnimationsSpeed = TimeSpan.Zero
 			}
 			];
 
@@ -151,7 +152,7 @@ namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 
 			TargetPort = port;
 
-			_service.Configure(ip, port);
+			_service.Configure(new TcpThroughputConfig(ip, port, TimeSpan.FromMilliseconds(200)));
 			_service.Start();
 
 			RefreshCommandStates();

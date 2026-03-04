@@ -8,11 +8,13 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 	{
 		public event Action<double>? RateUpdated;
 
+		private TcpThroughputConfig? _config;
+
 		private bool _running;
 
-		public void Configure(string address, int port)
+		public void Configure(TcpThroughputConfig config)
 		{
-			// No configuration needed for this dummy service
+			_config = config;	
 		}
 
 		public void Start()
@@ -25,7 +27,10 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 
 				while (_running)
 				{
-					await Task.Delay(200);
+					if (_config is null)
+						break;
+
+					await Task.Delay(_config.SamplePeriod);
 					RateUpdated?.Invoke(rnd.NextDouble() * 100);
 				}
 			});
