@@ -1,56 +1,119 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EmbeddedNetworkLab.Core;
+using System;
+using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 {
 	public partial class TcpClientViewModel : ModuleViewModel
 	{
-		private readonly ITcpClientService _service;
+		private const int HistorySeconds = 60;
 
-		public override string Name => "Tcp Client Test";
+		private readonly ITcpThroughputService _service;
+		private readonly ITcpReachabilityService _reachService;
+
+		private CancellationTokenSource? _reachCts;
+
+		public override string Name => "Tcp Client";
+
+		[ObservableProperty]
+		private string? targetAddress = "192.168.1.110";
+
+		[ObservableProperty]
+		private int targetPort = 8080;
 
 		[ObservableProperty]
 		private double currentRate;
 
 		[ObservableProperty]
-		private string? targetAddress = "127.0.0.1";
-
-		[ObservableProperty]
-		private int targetPort = 8080;
-
-		// Text backing for the port input so we can validate parsing
-		[ObservableProperty]
 		private string? targetPortText = "8080";
 
-		public bool IsConfigurationEditable => !IsRunning;
+		[ObservableProperty]
+		private bool isReaching;
 
-		// New: the toggle button is enabled when running (to allow stop) OR when the port text is valid (to allow start)
-		public bool IsToggleEnabled => IsRunning || IsPortValid();
+		[ObservableProperty]
+		private string reachedStatus = "";
 
-		public TcpClientViewModel(ITcpClientService service)
+		public bool IsConfigurationEditable => !IsRunning && !IsReaching;
+
+		public bool IsCmdEnabled => !IsReaching;
+
+		public string StartStopThroughputLabel => IsRunning ? "Stop Throughput Test" : "Start Throughput Test";
+
+		public TcpClientViewModel(ITcpThroughputService service, ITcpReachabilityService reachService)
 		{
-			_service = service;
+			_service = service ?? throw new ArgumentNullException(nameof(service));
+			_reachService = reachService ?? throw new ArgumentNullException(nameof(reachService));
 
 			_service.RateUpdated += rate =>
 			{
 				Application.Current.Dispatcher.Invoke(() =>
 				{
 					CurrentRate = rate;
+
+					var now = DateTime.Now;
+
 				});
 			};
+
 		}
 
+		//------------------------------------------------------------------------------
+		/// \brief Reach server (simple TCP connect with timeout)
+		//------------------------------------------------------------------------------
+		[RelayCommand(CanExecute = nameof(CanReachServer))]
+		private async Task ReachedServerAsync()
+		{
+			if (!TryGetTarget(out var ip, out var port))
+			{
+				ReachedStatus = "Invalid target";
+				return;
+			}
+
+			IsReaching = true;
+			ReachedStatus = "Reaching...";
+
+			// Add a short delay so the UI shows the "Reaching..." status before proceeding.
+			await Task.Delay(TimeSpan.FromSeconds(1));
+
+			_reachCts?.Cancel();
+			_reachCts?.Dispose();
+			_reachCts = new CancellationTokenSource();
+
+			try
+			{
+				bool ok = await _reachService.TryConnectAsync(ip, port, TimeSpan.FromSeconds(2), _reachCts.Token);
+				ReachedStatus = ok ? "OK" : "FAIL";
+			}
+			finally
+			{
+				IsReaching = false;
+				RefreshCommandStates();
+			}
+		}
+
+		private bool CanReachServer()
+		{
+			if (IsReaching)
+				return false;
+
+			return TryGetTarget(out _, out _);
+		}
+
+		//------------------------------------------------------------------------------
+		/// \brief Start throughput (send data continuously)
+		//------------------------------------------------------------------------------
 		[RelayCommand(CanExecute = nameof(CanStart))]
 		private void Start()
 		{
-			// Additional safety: validate again before starting
-			if (string.IsNullOrWhiteSpace(TargetPortText) ||
-				!int.TryParse(TargetPortText, out var port) ||
-				port < 1 || port > 65535)
+			if (!TryGetTarget(out var ip, out var port))
 			{
-				MessageBox.Show("Port invalide. Entrez un entier entre 1 et 65535.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+				MessageBox.Show("Port invalide. Entrez un entier entre 1 et 65535.", "Validation",
+					MessageBoxButton.OK, MessageBoxImage.Warning);
 				return;
 			}
 
@@ -59,33 +122,43 @@ namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 
 			TargetPort = port;
 
+			_service.Configure(ip, port);
 			_service.Start();
+
+			RefreshCommandStates();
 		}
 
 		private bool CanStart()
 		{
-			// Prevent start when already running or when port text is invalid
-			if (IsRunning)
+			if (IsRunning || IsReaching)
 				return false;
 
-			return IsPortValid();
+			return TryGetTarget(out _, out _);
 		}
 
+		//------------------------------------------------------------------------------
+		/// \brief Stop throughput
+		//------------------------------------------------------------------------------
 		[RelayCommand(CanExecute = nameof(CanStop))]
 		private void Stop()
 		{
 			_service.Stop();
 			StopExecution();
 			CurrentRate = 0d;
-		}
-		private bool CanStop()
-		{
-			return IsRunning;
+
+			RefreshCommandStates();
 		}
 
-		// Toggle: can start only if CanStart, can stop if IsRunning
-		[RelayCommand(CanExecute = nameof(CanToggle))]
-		private void Toggle()
+		private bool CanStop()
+		{
+			return IsRunning && !IsReaching;
+		}
+
+		//------------------------------------------------------------------------------
+		/// \brief Toggle start/stop
+		//------------------------------------------------------------------------------
+		[RelayCommand(CanExecute = nameof(CanStartStopThroughput))]
+		private void StartStopThroughput()
 		{
 			if (IsRunning)
 				Stop();
@@ -93,40 +166,46 @@ namespace EmbeddedNetworkLab.UI.Modules.TcpClient
 				Start();
 		}
 
-		private bool CanToggle()
+		private bool CanStartStopThroughput()
 		{
-			// Allow stopping while running; allow starting only when CanStart is true
+			if (IsReaching)
+				return false;
+
 			return IsRunning || CanStart();
 		}
 
-		public string StartStopLabel => IsRunning ? "Stop" : "Start";
-
-		private bool IsPortValid()
+		private bool TryGetTarget(out string ip, out int port)
 		{
+			ip = TargetAddress?.Trim() ?? string.Empty;
+			port = 0;
+
+			if (string.IsNullOrWhiteSpace(ip))
+				return false;
+
 			if (string.IsNullOrWhiteSpace(TargetPortText))
 				return false;
-			if (!int.TryParse(TargetPortText, out var port))
+
+			if (!int.TryParse(TargetPortText, out port))
 				return false;
-			return port >= 1 && port <= 65535;
+
+			return port is >= 1 and <= 65535;
 		}
 
-		// Notify command availability and the toggle enabled state when relevant inputs change
-		partial void OnTargetPortTextChanged(string? value)
+		private void RefreshCommandStates()
 		{
 			StartCommand.NotifyCanExecuteChanged();
 			StopCommand.NotifyCanExecuteChanged();
-			ToggleCommand.NotifyCanExecuteChanged();
-			OnPropertyChanged(nameof(IsToggleEnabled));
-		}
+			StartStopThroughputCommand.NotifyCanExecuteChanged();
+			ReachedServerCommand.NotifyCanExecuteChanged();
 
-		protected override void OnRunningStateChanged(bool isRunning)
-		{
-			StartCommand.NotifyCanExecuteChanged();
-			StopCommand.NotifyCanExecuteChanged();
-			ToggleCommand.NotifyCanExecuteChanged();
-			OnPropertyChanged(nameof(StartStopLabel));
+			OnPropertyChanged(nameof(StartStopThroughputLabel));
 			OnPropertyChanged(nameof(IsConfigurationEditable));
-			OnPropertyChanged(nameof(IsToggleEnabled));
+			OnPropertyChanged(nameof(IsCmdEnabled));
 		}
+
+		partial void OnTargetAddressChanged(string? value) => RefreshCommandStates();
+		partial void OnTargetPortTextChanged(string? value) => RefreshCommandStates();
+		partial void OnIsReachingChanged(bool value) => RefreshCommandStates();
+		protected override void OnRunningStateChanged(bool isRunning) => RefreshCommandStates();
 	}
 }
