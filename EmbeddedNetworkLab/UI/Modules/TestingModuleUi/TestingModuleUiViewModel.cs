@@ -1,10 +1,12 @@
-﻿using System;
+﻿using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
+using System.Windows.Threading;
 
 namespace EmbeddedNetworkLab.UI.Modules.TestingModuleUi
 {
@@ -13,16 +15,53 @@ namespace EmbeddedNetworkLab.UI.Modules.TestingModuleUi
 
 		public override string Name => "Testing Module";
 
-		// Exposed series for MVVM binding to the CartesianChart
-		public ISeries[] Series { get; } = new ISeries[]
+		public ObservableCollection<double> Values { get; } = new();
+
+		public ISeries[] Series { get; }
+
+		private readonly DispatcherTimer _timer;
+		private double _t;
+
+		public TestingModuleUiViewModel()
 		{
-			new LineSeries<double>
+			// Seed a few points so you immediately see something
+			for (int i = 0; i < 50; i++)
+				Values.Add(0);
+
+			Series =
+			[
+				new LineSeries<double>
+				{
+					Values = Values,
+					Fill = null,
+					GeometrySize = 0,
+					LineSmoothness = 0
+				}
+			];
+
+			_timer = new DispatcherTimer
 			{
-				Values = new double[] { 3, 5, 2, 8, 6 },
-				Fill = null
-			}
-		};
+				Interval = TimeSpan.FromMilliseconds(100) // 10 Hz
+			};
+			_timer.Tick += (_, __) => AddNextSample();
+			_timer.Start();
+		}
 
+		private void AddNextSample()
+		{
+			const int maxPoints = 200;
 
+			// Simple fake bandwidth-like signal:
+			// base + sine + a bit of noise
+			double noise = (Random.Shared.NextDouble() - 0.5) * 2.0; // [-1..+1]
+			double value = 50.0 + 20.0 * Math.Sin(_t) + 5.0 * Math.Sin(_t * 0.2) + noise;
+
+			Values.Add(value);
+
+			if (Values.Count > maxPoints)
+				Values.RemoveAt(0);
+
+			_t += 0.15;
+		}
 	}
 }

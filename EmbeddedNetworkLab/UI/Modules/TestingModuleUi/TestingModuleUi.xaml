@@ -14,6 +14,10 @@
                        FontSize="24"
                        Margin="0,0,0,15"
                        HorizontalAlignment="Center"/>
+            <TextBlock Text="LiveCharts2"
+                       FontSize="18"
+                       Margin="0,0,0,15"
+                       HorizontalAlignment="Left"/>
             <lvc:CartesianChart Height="250" Series="{Binding Series}" />
         </StackPanel>
 
