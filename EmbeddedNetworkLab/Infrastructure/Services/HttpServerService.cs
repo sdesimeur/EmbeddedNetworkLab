@@ -69,16 +69,18 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 					using (var stream = File.Create(savePath))
 						await file.CopyToAsync(stream);
 
-					var video = new ReceivedVideo(file.FileName, savePath, DateTime.Now);
+					var receivedAt = DateTime.Now;
+					var video = new ReceivedVideo(file.FileName, savePath, receivedAt);
 					VideoReceived?.Invoke(this, video);
 
 					context.Response.ContentType = "application/json";
 					context.Response.StatusCode = 200;
 					await context.Response.WriteAsync("{\"status\":\"uploaded\"}");
 
-					var ts = DateTime.Now.ToString("HH:mm:ss");
+					var ts = receivedAt.ToString("HH:mm:ss");
 					var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "?";
-					RequestReceived?.Invoke(this, $"[{ts}] POST /upload {file.FileName} ({file.Length} bytes) from {clientIp} → 200");
+					var sizeKb = file.Length / 1024.0;
+					ServerEventTriggered?.Invoke(this, $"[{ts}] [UPLOAD] {file.FileName} — {sizeKb:F1} KB — from {clientIp} — saved to {savePath}");
 				});
 
 				// Single catch-all route
@@ -103,11 +105,11 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 				await _app.StartAsync();
 
 				IsRunning = true;
-				ServerEventTriggered?.Invoke(this, $"[START] Listening on {string.Join(", ", _listeningUrls)}");
+				ServerEventTriggered?.Invoke(this, $"[{DateTime.Now:HH:mm:ss}] [START] Listening on {string.Join(", ", _listeningUrls)}");
 			}
 			catch (Exception ex)
 			{
-				ServerEventTriggered?.Invoke(this, $"[ERROR] Failed to start: {ex.Message}");
+				ServerEventTriggered?.Invoke(this, $"[{DateTime.Now:HH:mm:ss}] [ERROR] Failed to start: {ex.Message}");
 				await TryCleanupAsync();
 			}
 		}
@@ -117,7 +119,7 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 			if (!IsRunning) return;
 
 			await TryCleanupAsync();
-			ServerEventTriggered?.Invoke(this, "[STOP] Server stopped");
+			ServerEventTriggered?.Invoke(this, $"[{DateTime.Now:HH:mm:ss}] [STOP] Server stopped");
 		}
 
 		private async Task TryCleanupAsync()

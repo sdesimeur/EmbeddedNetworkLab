@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EmbeddedNetworkLab.Core;
 using EmbeddedNetworkLab.Core.Models;
@@ -49,7 +49,7 @@ namespace EmbeddedNetworkLab.UI.Modules.HttpServer
 					Videos.Insert(0, new ReceivedVideoViewModel(video, OnPlayVideo)));
 
 			_service.ServerEventTriggered += (_, msg) =>
-				Application.Current.Dispatcher.Invoke(() => EventLog.Insert(0, msg));
+				Application.Current.Dispatcher.Invoke(() => AppendToLog(msg));
 
 			LoadNetworkInterfaces();
 		}
@@ -91,6 +91,8 @@ namespace EmbeddedNetworkLab.UI.Modules.HttpServer
 
 		[RelayCommand]
 		private void ClearEventLog() => EventLog.Clear();
+
+		private void AppendToLog(string message) => EventLog.Add(message);
 
 		private void OnPlayVideo(ReceivedVideoViewModel vm)
 		{

@@ -150,7 +150,8 @@
                         <Button HorizontalAlignment="Right" Content="Clear" Width="50" Height="20" FontSize="11"
                                 Command="{Binding ClearEventLogCommand}"/>
                     </Grid>
-                    <ListBox Grid.Row="1"
+                    <ListBox x:Name="EventLogList"
+                             Grid.Row="1"
                              ItemsSource="{Binding EventLog}"
                              FontFamily="Consolas" FontSize="11"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
