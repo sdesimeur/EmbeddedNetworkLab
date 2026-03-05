@@ -1,3 +1,5 @@
+using EmbeddedNetworkLab.Core.Models;
+
 namespace EmbeddedNetworkLab.Core
 {
 	public interface IHttpServerService
@@ -10,5 +12,6 @@ namespace EmbeddedNetworkLab.Core
 
 		event EventHandler<string>? RequestReceived;
 		event EventHandler<string>? ServerEventTriggered;
+		event EventHandler<ReceivedVideo>? VideoReceived;
 	}
 }

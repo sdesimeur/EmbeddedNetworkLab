@@ -1,4 +1,5 @@
 using EmbeddedNetworkLab.Core;
+using EmbeddedNetworkLab.Core.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +25,7 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 
 		public event EventHandler<string>? RequestReceived;
 		public event EventHandler<string>? ServerEventTriggered;
+		public event EventHandler<ReceivedVideo>? VideoReceived;
 
 		public async Task StartAsync(string bindIp, int httpPort, bool httpsEnabled, int httpsPort)
 		{
@@ -47,6 +50,36 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 				});
 
 				_app = builder.Build();
+
+				// Upload endpoint
+				_app.MapPost("/upload", async context =>
+				{
+					var form = await context.Request.ReadFormAsync();
+					var file = form.Files.FirstOrDefault();
+					if (file == null)
+					{
+						context.Response.StatusCode = 400;
+						await context.Response.WriteAsync("{\"error\":\"no file\"}");
+						return;
+					}
+
+					var saveDir = Path.Combine(AppContext.BaseDirectory, "received_videos");
+					Directory.CreateDirectory(saveDir);
+					var savePath = Path.Combine(saveDir, file.FileName);
+					using (var stream = File.Create(savePath))
+						await file.CopyToAsync(stream);
+
+					var video = new ReceivedVideo(file.FileName, savePath, DateTime.Now);
+					VideoReceived?.Invoke(this, video);
+
+					context.Response.ContentType = "application/json";
+					context.Response.StatusCode = 200;
+					await context.Response.WriteAsync("{\"status\":\"uploaded\"}");
+
+					var ts = DateTime.Now.ToString("HH:mm:ss");
+					var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "?";
+					RequestReceived?.Invoke(this, $"[{ts}] POST /upload {file.FileName} ({file.Length} bytes) from {clientIp} → 200");
+				});
 
 				// Single catch-all route
 				_app.Map("/{**path}", async context =>
