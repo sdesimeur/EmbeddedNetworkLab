@@ -1,0 +1,39 @@
+<div class="module-header">
+  <span class="status-indicator" [class.active]="isOpen"></span>
+  <h2>Serial Terminal</h2>
+</div>
+
+<div class="section">
+  <div class="section-title">Port Configuration</div>
+  <div class="form-row">
+    <label>Port</label>
+    <select [(ngModel)]="selectedPort" [disabled]="isOpen" style="width:110px">
+      @for (p of ports; track p) {
+        <option [value]="p">{{ p }}</option>
+      }
+    </select>
+    <button class="btn-secondary btn-sm" [disabled]="isOpen" (click)="refreshPorts()">↻</button>
+
+    <label>Baud</label>
+    <select [(ngModel)]="selectedBaud" (ngModelChange)="onBaudChange()" style="width:100px">
+      @for (b of baudRates; track b) {
+        <option [value]="b">{{ b }}</option>
+      }
+    </select>
+
+    @if (!isOpen) {
+      <button class="btn-primary" [disabled]="!selectedPort" (click)="open()">Open</button>
+    } @else {
+      <button class="btn-danger" (click)="close()">Close</button>
+    }
+  </div>
+  @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+</div>
+
+<div class="section terminal-section">
+  <div class="section-title" style="display:flex;justify-content:space-between">
+    <span>Terminal</span>
+    <button class="btn-secondary btn-sm" (click)="clearTerminal()">Clear</button>
+  </div>
+  <div class="terminal">{{ terminalText }}</div>
+</div>

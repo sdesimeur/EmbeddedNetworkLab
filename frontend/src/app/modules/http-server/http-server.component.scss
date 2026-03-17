@@ -1,0 +1,58 @@
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  h2 { margin: 0; font-size: 18px; font-weight: 600; color: #cdd6f4; }
+}
+
+.columns {
+  display: flex;
+  gap: 12px;
+  .col { flex: 1; display: flex; flex-direction: column; }
+}
+
+.video-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.video-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid #313244;
+  font-size: 12px;
+}
+
+.video-name { color: #a6e3a1; }
+.video-time { color: #6c7086; }
+.empty { color: #45475a; font-size: 12px; }
+
+.url-badge {
+  background: #313244;
+  color: #89b4fa;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.error { color: #f38ba8; font-size: 12px; margin: 4px 0 0; }
+
+.progress-bar-track {
+  background: #313244;
+  border-radius: 4px;
+  height: 12px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #89b4fa;
+  transition: width 0.2s ease;
+  border-radius: 4px;
+}
+
+.progress-label { font-size: 12px; color: #a6adc8; }

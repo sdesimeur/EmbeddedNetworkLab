@@ -1,0 +1,23 @@
+<div class="shell">
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⚙</span>
+      <span class="logo-text">EmbeddedNetworkLab</span>
+    </div>
+    <ul class="nav-list">
+      @for (item of navItems; track item.route) {
+        <li>
+          <a class="nav-item"
+             [routerLink]="item.route"
+             routerLinkActive="active">
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

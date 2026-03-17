@@ -1,0 +1,70 @@
+<div class="module-header">
+  <span class="status-indicator" [class.active]="isRunning"></span>
+  <h2>HTTP Server</h2>
+</div>
+
+<div class="section">
+  <div class="section-title">Configuration</div>
+  <div class="form-row">
+    <label>Bind IP</label>
+    <input type="text" [(ngModel)]="bindIp" [disabled]="isRunning" style="width:130px">
+    <label>HTTP Port</label>
+    <input type="number" [(ngModel)]="httpPort" [disabled]="isRunning" style="width:80px">
+  </div>
+  <div class="form-row">
+    @if (!isRunning) {
+      <button class="btn-primary" (click)="start()">Start Server</button>
+    } @else {
+      <button class="btn-danger" (click)="stop()">Stop Server</button>
+    }
+    @if (isRunning) {
+      <span class="url-badge" *ngFor="let url of listeningUrls">{{ url }}</span>
+    }
+  </div>
+  @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+</div>
+
+@if (isRunning && uploadProgress > 0 && uploadProgress < 100) {
+  <div class="section">
+    <div class="section-title">Upload Progress</div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" [style.width.%]="uploadProgress"></div>
+    </div>
+    <span class="progress-label">{{ uploadProgress | number:'1.0-0' }}%</span>
+  </div>
+}
+
+<div class="columns">
+  <div class="col">
+    <div class="section" style="flex:1">
+      <div class="section-title" style="display:flex;justify-content:space-between">
+        <span>Received Files ({{ videos.length }})</span>
+        <button class="btn-secondary btn-sm" (click)="clearVideos()">Clear</button>
+      </div>
+      <div class="video-list">
+        @for (v of videos; track v.fileName) {
+          <div class="video-item">
+            <span class="video-name">{{ v.fileName }}</span>
+            <span class="video-time">{{ v.receivedAt | date:'HH:mm:ss' }}</span>
+          </div>
+        }
+        @empty { <span class="empty">No files received yet</span> }
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="section" style="flex:1">
+      <div class="section-title" style="display:flex;justify-content:space-between">
+        <span>Event Log</span>
+        <button class="btn-secondary btn-sm" (click)="clearLog()">Clear</button>
+      </div>
+      <div class="log-area">
+        @for (line of eventLog; track $index) {
+          <div>{{ line }}</div>
+        }
+        @empty { <span style="color:#45475a">No events yet</span> }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  h2 { margin: 0; font-size: 18px; font-weight: 600; color: #cdd6f4; }
+}
+
+.commands-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.command-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cmd-name {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.cmd-text {
+  flex: 1;
+}
+
+.status-text {
+  font-size: 12px;
+  color: #cba6f7;
+  font-family: monospace;
+  margin-top: 6px;
+  background: #11111b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #313244;
+  max-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error { color: #f38ba8; font-size: 12px; margin: 4px 0 0; }

@@ -1,0 +1,47 @@
+<div class="module-header">
+  <span class="status-indicator" [class.active]="isRunning"></span>
+  <h2>TCP Client</h2>
+</div>
+
+<div class="section">
+  <div class="section-title">Target</div>
+  <div class="form-row">
+    <label>IP Address</label>
+    <input type="text" [(ngModel)]="targetAddress" [disabled]="isRunning || isReaching" style="width:150px">
+    <label>Port</label>
+    <input type="text" [(ngModel)]="targetPort" [disabled]="isRunning || isReaching" style="width:80px">
+  </div>
+  <div class="form-row">
+    <button class="btn-secondary"
+            [disabled]="!isInputValid || isReaching || isRunning"
+            (click)="reach()">
+      {{ isReaching ? 'Reaching…' : 'Reach Server' }}
+    </button>
+    @if (reachedStatus) {
+      <span class="reach-status" [class.ok]="reachedStatus.includes('OK')"
+                                 [class.fail]="reachedStatus.includes('FAIL')">
+        {{ reachedStatus }}
+      </span>
+    }
+  </div>
+  <div class="form-row">
+    @if (!isRunning) {
+      <button class="btn-primary" [disabled]="!isInputValid || isReaching" (click)="startThroughput()">
+        Start Throughput Test
+      </button>
+    } @else {
+      <button class="btn-danger" (click)="stopThroughput()">Stop Throughput Test</button>
+    }
+    @if (isRunning) {
+      <span class="rate-badge">{{ currentRate }} Mbps</span>
+    }
+  </div>
+  @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+</div>
+
+<div class="section chart-section">
+  <div class="section-title">Throughput (Mbps)</div>
+  <div class="chart-wrap">
+    <canvas #chartCanvas></canvas>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+<div class="module-header">
+  <span class="status-indicator" [class.active]="isOpen"></span>
+  <h2>Central Simulator</h2>
+</div>
+
+<div class="section">
+  <div class="section-title">Port Configuration</div>
+  <div class="form-row">
+    <label>Port</label>
+    <select [(ngModel)]="selectedPort" [disabled]="isOpen" style="width:110px">
+      @for (p of ports; track p) {
+        <option [value]="p">{{ p }}</option>
+      }
+    </select>
+    <button class="btn-secondary btn-sm" [disabled]="isOpen" (click)="refreshPorts()">↻</button>
+
+    <label>Baud</label>
+    <select [(ngModel)]="selectedBaud" [disabled]="isOpen" style="width:100px">
+      @for (b of baudRates; track b) {
+        <option [value]="b">{{ b }}</option>
+      }
+    </select>
+
+    @if (!isOpen) {
+      <button class="btn-primary" [disabled]="!selectedPort" (click)="open()">Open</button>
+    } @else {
+      <button class="btn-danger" (click)="close()">Close</button>
+    }
+  </div>
+  @if (statusText) {
+    <div class="status-text">{{ statusText }}</div>
+  }
+  @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+</div>
+
+<div class="section">
+  <div class="section-title">Commands</div>
+  <div class="commands-grid">
+    @for (cmd of commands; track cmd; let i = $index) {
+      <div class="command-item">
+        <input type="text" class="cmd-name" [(ngModel)]="cmd.name"
+               (ngModelChange)="onCommandChanged()" placeholder="Name">
+        <input type="text" class="cmd-text" [(ngModel)]="cmd.text"
+               (ngModelChange)="onCommandChanged()" placeholder="Command text">
+        <button class="btn-primary btn-sm"
+                [disabled]="!isOpen || !cmd.text.trim()"
+                (click)="send(cmd)">
+          Send
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title" style="display:flex;justify-content:space-between">
+    <span>Log</span>
+    <button class="btn-secondary btn-sm" (click)="clearLog()">Clear</button>
+  </div>
+  <div class="log-area">
+    @for (line of log; track $index) {
+      <div>{{ line }}</div>
+    }
+    @empty { <span style="color:#45475a">No activity yet</span> }
+  </div>
+</div>

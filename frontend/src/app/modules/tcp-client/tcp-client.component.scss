@@ -1,0 +1,33 @@
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  h2 { margin: 0; font-size: 18px; font-weight: 600; color: #cdd6f4; }
+}
+
+.reach-status {
+  font-size: 13px;
+  font-weight: 600;
+  &.ok   { color: #a6e3a1; }
+  &.fail { color: #f38ba8; }
+}
+
+.rate-badge {
+  background: #313244;
+  color: #89b4fa;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.chart-section { padding-bottom: 16px; }
+
+.chart-wrap {
+  height: 220px;
+  position: relative;
+}
+
+.error { color: #f38ba8; font-size: 12px; margin: 4px 0 0; }

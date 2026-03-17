@@ -1,0 +1,25 @@
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  h2 { margin: 0; font-size: 18px; font-weight: 600; color: #cdd6f4; }
+}
+
+.terminal-section { flex: 1; }
+
+.terminal {
+  background: #11111b;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  color: #a6e3a1;
+  height: 380px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.error { color: #f38ba8; font-size: 12px; margin: 4px 0 0; }

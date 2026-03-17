@@ -1,0 +1,25 @@
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  h2 { margin: 0; font-size: 18px; font-weight: 600; color: #cdd6f4; }
+}
+
+.columns {
+  display: flex;
+  gap: 12px;
+  .col { flex: 1; }
+}
+
+.addr-badge {
+  background: #313244;
+  color: #a6e3a1;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.msg-line { color: #cba6f7; }
+.error { color: #f38ba8; font-size: 12px; margin: 4px 0 0; }

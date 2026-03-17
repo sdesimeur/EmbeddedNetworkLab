@@ -1,0 +1,72 @@
+<div class="module-header">
+  <span class="status-indicator" [class.active]="isRunning"></span>
+  <h2>MQTT Broker</h2>
+</div>
+
+<div class="section">
+  <div class="section-title">Configuration</div>
+  <div class="form-row">
+    <label>Bind IP</label>
+    <input type="text" [(ngModel)]="bindIp" [disabled]="isRunning" style="width:130px">
+    <label>Port</label>
+    <input type="number" [(ngModel)]="port" [disabled]="isRunning" style="width:80px">
+  </div>
+  <div class="form-row">
+    <label>
+      <input type="checkbox" [(ngModel)]="useAuth" [disabled]="isRunning"> Authentication
+    </label>
+  </div>
+  @if (useAuth) {
+    <div class="form-row">
+      <label>Username</label>
+      <input type="text" [(ngModel)]="username" [disabled]="isRunning" style="width:120px">
+      <label>Password</label>
+      <input type="password" [(ngModel)]="password" [disabled]="isRunning" style="width:120px">
+    </div>
+  }
+  <div class="form-row">
+    @if (!isRunning) {
+      <button class="btn-primary" (click)="start()">Start Broker</button>
+    } @else {
+      <button class="btn-danger" (click)="stop()">Stop Broker</button>
+    }
+    @if (isRunning) {
+      @for (addr of listeningAddresses; track addr) {
+        <span class="addr-badge">mqtt://{{ addr }}</span>
+      }
+    }
+  </div>
+  @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+</div>
+
+<div class="columns">
+  <div class="col">
+    <div class="section">
+      <div class="section-title" style="display:flex;justify-content:space-between">
+        <span>Messages</span>
+        <button class="btn-secondary btn-sm" (click)="clearMessages()">Clear</button>
+      </div>
+      <div class="log-area">
+        @for (msg of messages; track $index) {
+          <div class="msg-line">{{ msg }}</div>
+        }
+        @empty { <span style="color:#45475a">No messages yet</span> }
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="section">
+      <div class="section-title" style="display:flex;justify-content:space-between">
+        <span>Broker Events</span>
+        <button class="btn-secondary btn-sm" (click)="clearEvents()">Clear</button>
+      </div>
+      <div class="log-area">
+        @for (evt of events; track $index) {
+          <div>{{ evt }}</div>
+        }
+        @empty { <span style="color:#45475a">No events yet</span> }
+      </div>
+    </div>
+  </div>
+</div>
