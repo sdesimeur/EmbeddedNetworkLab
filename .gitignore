@@ -86,3 +86,5 @@ coverage/
 *.db
 *.sqlite
 /EmbeddedNetworkLab/_res/*.mp4
+
+.fake

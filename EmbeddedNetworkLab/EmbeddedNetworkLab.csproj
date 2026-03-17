@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\EmbeddedNetworkLab.HttpServer\EmbeddedNetworkLab.HttpServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

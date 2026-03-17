@@ -68,14 +68,14 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 				await _app.StartAsync();
 
 				IsRunning = true;
-				ServerEventTriggered?.Invoke(this, 
+				ServerEventTriggered?.Invoke(this,
 					$"[{DateTime.Now:HH:mm:ss}] [START] Listening on {string.Join(", ", _listeningUrls)}");
 				ServerEventTriggered?.Invoke(this,
 					$"[{DateTime.Now:HH:mm:ss}] [CONFIG] HTTP port={httpPort} HTTPS={httpsEnabled}");
 			}
 			catch (Exception ex)
 			{
-				ServerEventTriggered?.Invoke(this, 
+				ServerEventTriggered?.Invoke(this,
 					$"[{DateTime.Now:HH:mm:ss}] [ERROR] Failed to start: {ex.Message}");
 				await TryCleanupAsync();
 			}
@@ -89,7 +89,7 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 
 			await TryCleanupAsync();
 
-			ServerEventTriggered?.Invoke(this, 
+			ServerEventTriggered?.Invoke(this,
 				$"[{DateTime.Now:HH:mm:ss}] [STOP] Server stopped");
 		}
 
@@ -143,7 +143,7 @@ namespace EmbeddedNetworkLab.Infrastructure.Services
 
 			var ts = receivedAt.ToString("HH:mm:ss");
 			var sizeKb = file.Length / 1024.0;
-			ServerEventTriggered?.Invoke(this, 
+			ServerEventTriggered?.Invoke(this,
 				$"[{ts}] [UPLOAD] {file.FileName} — {sizeKb:F1} KB — from {clientIp} — saved to {savePath}");
 		}
 
