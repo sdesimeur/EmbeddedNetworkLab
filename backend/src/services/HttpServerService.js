@@ -103,6 +103,19 @@ class HttpServerService extends EventEmitter {
       });
     });
 
+    // Delete video endpoint
+    app.delete('/videos/:fileName', (req, res) => {
+      const filePath = path.join(VIDEOS_DIR, path.basename(req.params.fileName));
+      const clientIp = req.ip;
+      const ts = new Date().toLocaleTimeString();
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      fs.unlinkSync(filePath);
+      this.emit('event', `[${ts}] [DELETE] ${req.params.fileName} from ${clientIp}`);
+      res.json({ status: 'deleted' });
+    });
+
     // Catch-all: log all requests
     app.use((req, res) => {
       const ts = new Date().toLocaleTimeString();

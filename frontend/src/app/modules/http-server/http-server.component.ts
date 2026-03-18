@@ -23,6 +23,7 @@ export class HttpServerComponent implements OnInit, OnDestroy {
   videos: Video[] = [];
   uploadProgress = 0;
   errorMsg = '';
+  selectedVideo: Video | null = null;
 
   private subs: Subscription[] = [];
 
@@ -68,6 +69,17 @@ export class HttpServerComponent implements OnInit, OnDestroy {
 
   clearLog() { this.eventLog = []; }
   clearVideos() { this.videos = []; }
+
+  openVideo(v: Video) { this.selectedVideo = v; }
+  closeVideo() { this.selectedVideo = null; }
+  videoUrl(v: Video) { return `/api/http-server/stream/${encodeURIComponent(v.fileName)}`; }
+  downloadUrl(v: Video) { return `/api/http-server/download/${encodeURIComponent(v.fileName)}`; }
+
+  async deleteVideo(v: Video) {
+    await this.api.deleteVideo(v.fileName);
+    this.videos = this.videos.filter(x => x.fileName !== v.fileName);
+    if (this.selectedVideo?.fileName === v.fileName) this.selectedVideo = null;
+  }
 
   ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
 }

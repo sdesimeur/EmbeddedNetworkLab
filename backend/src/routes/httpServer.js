@@ -35,4 +35,35 @@ router.get('/videos', (req, res) => {
   res.json(svc.getReceivedVideos());
 });
 
+router.get('/stream/:fileName', (req, res) => {
+  console.log('httpServer/stream/' + req.params.fileName);
+  const path = require('path');
+  const fs = require('fs');
+  const VIDEOS_DIR = path.join(__dirname, '../../../received_videos');
+  const filePath = path.join(VIDEOS_DIR, path.basename(req.params.fileName));
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Not found' });
+  res.sendFile(filePath);
+});
+
+router.get('/download/:fileName', (req, res) => {
+  console.log('httpServer/download/' + req.params.fileName);
+  const path = require('path');
+  const fs = require('fs');
+  const VIDEOS_DIR = path.join(__dirname, '../../../received_videos');
+  const filePath = path.join(VIDEOS_DIR, path.basename(req.params.fileName));
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Not found' });
+  res.download(filePath, req.params.fileName);
+});
+
+router.delete('/videos/:fileName', (req, res) => {
+  console.log('httpServer/videos/' + req.params.fileName);
+  const path = require('path');
+  const fs = require('fs');
+  const VIDEOS_DIR = path.join(__dirname, '../../../received_videos');
+  const filePath = path.join(VIDEOS_DIR, path.basename(req.params.fileName));
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Not found' });
+  fs.unlinkSync(filePath);
+  res.json({ status: 'deleted' });
+});
+
 module.exports = router;

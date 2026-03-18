@@ -13,6 +13,7 @@ export class ApiService {
   startHttpServer(body: any)                    { return firstValueFrom(this.http.post<any>(`${API}/http-server/start`, body)); }
   stopHttpServer()                              { return firstValueFrom(this.http.post<any>(`${API}/http-server/stop`, {})); }
   getReceivedVideos()                           { return firstValueFrom(this.http.get<any[]>(`${API}/http-server/videos`)); }
+  deleteVideo(fileName: string)                 { return firstValueFrom(this.http.delete<any>(`${API}/http-server/videos/${encodeURIComponent(fileName)}`)); }
 
   // MQTT Broker
   getMqttStatus()                               { return firstValueFrom(this.http.get<any>(`${API}/mqtt/status`)); }
