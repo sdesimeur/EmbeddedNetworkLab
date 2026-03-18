@@ -1,11 +1,13 @@
 const router = require('express').Router();
 
 router.get('/status', (req, res) => {
+  console.log('httpServer/start');
   const svc = req.services.mqttBrokerService;
   res.json({ isRunning: svc.isRunning, listeningAddresses: svc.listeningAddresses });
 });
 
 router.post('/start', async (req, res) => {
+  console.log('httpServer/status');
   const svc = req.services.mqttBrokerService;
   const { port = 1883, bindIp = '0.0.0.0', username, password } = req.body;
   try {
@@ -17,6 +19,7 @@ router.post('/start', async (req, res) => {
 });
 
 router.post('/stop', async (req, res) => {
+  console.log('httpServer/stop');
   const svc = req.services.mqttBrokerService;
   try {
     await svc.stop();

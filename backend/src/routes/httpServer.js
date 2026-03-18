@@ -1,11 +1,13 @@
 const router = require('express').Router();
 
 router.get('/status', (req, res) => {
+  console.log('httpServer/status');
   const svc = req.services.httpServerService;
   res.json({ isRunning: svc.isRunning, listeningUrls: svc.listeningUrls });
 });
 
 router.post('/start', async (req, res) => {
+  console.log('httpServer/start');
   const svc = req.services.httpServerService;
   const { bindIp = '0.0.0.0', httpPort = 8081 } = req.body;
   try {
@@ -17,6 +19,7 @@ router.post('/start', async (req, res) => {
 });
 
 router.post('/stop', async (req, res) => {
+  console.log('httpServer/stop');
   const svc = req.services.httpServerService;
   try {
     await svc.stop();
@@ -27,6 +30,7 @@ router.post('/stop', async (req, res) => {
 });
 
 router.get('/videos', (req, res) => {
+  console.log('httpServer/videos');
   const svc = req.services.httpServerService;
   res.json(svc.getReceivedVideos());
 });

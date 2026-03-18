@@ -53,7 +53,11 @@
           "defaultConfiguration": "development",
           "options": {
             "proxyConfig": "proxy.conf.json",
-            "port": 54200
+	    "host": "0.0.0.0",
+	    "allowedHosts": ["127.0.0.1","20.224.52.54", "sdatral.mooo.com", "localhost"],
+	    "liveReload": true,
+            "watch": true,
+            "port": 4200
           }
         }
       }

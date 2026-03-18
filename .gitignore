@@ -86,3 +86,4 @@ coverage/
 *.db
 *.sqlite
 /EmbeddedNetworkLab/_res/*.mp4
+./received_videos/

@@ -73,7 +73,7 @@ app.use('/videos', express.static(path.join(__dirname, '../../received_videos'))
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-const PORT = process.env.PORT || 53000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`[EmbeddedNetworkLab] Backend running on http://localhost:${PORT}`);
 });

@@ -1,22 +1,26 @@
 const router = require('express').Router();
 
 router.get('/ports', async (req, res) => {
+  console.log('httpServer/ports');
   const svc = req.services.serialService;
   const ports = await svc.listPorts();
   res.json(ports);
 });
 
 router.get('/baud-rates', (req, res) => {
+  console.log('httpServer/baud-rates');
   const svc = req.services.serialService;
   res.json(svc.getBaudRates());
 });
 
 router.get('/status', (req, res) => {
+  console.log('httpServer/status');
   const svc = req.services.serialService;
   res.json({ isOpen: svc.isOpen, portName: svc.portName, baudRate: svc.baudRate });
 });
 
 router.post('/open', async (req, res) => {
+  console.log('httpServer/open');
   const svc = req.services.serialService;
   const { portName, baudRate = 460800 } = req.body;
   if (!portName) return res.status(400).json({ error: 'portName required' });
@@ -29,6 +33,7 @@ router.post('/open', async (req, res) => {
 });
 
 router.post('/close', async (req, res) => {
+  console.log('httpServer/close');
   const svc = req.services.serialService;
   try {
     await svc.close();
@@ -39,6 +44,7 @@ router.post('/close', async (req, res) => {
 });
 
 router.post('/send', async (req, res) => {
+  console.log('httpServer/send');
   const svc = req.services.serialService;
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: 'text required' });
@@ -51,6 +57,7 @@ router.post('/send', async (req, res) => {
 });
 
 router.post('/baud-rate', (req, res) => {
+  console.log('httpServer/baud-rate');
   const svc = req.services.serialService;
   const { baudRate } = req.body;
   if (!baudRate) return res.status(400).json({ error: 'baudRate required' });
