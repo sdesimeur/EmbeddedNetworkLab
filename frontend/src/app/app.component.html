@@ -17,7 +17,34 @@
       }
     </ul>
   </nav>
-  <main class="content">
-    <router-outlet />
-  </main>
+
+  <div class="main-area">
+    <main class="content">
+      <router-outlet />
+    </main>
+
+    <!-- CONSOLE -->
+    <div class="console-panel" [class.collapsed]="consoleCollapsed">
+      <div class="console-header">
+        <span class="console-title">Console</span>
+        <div class="console-actions">
+          <button class="console-btn" (click)="clearConsole()" title="Clear">✕</button>
+          <button class="console-btn" (click)="toggleConsole()" title="Toggle">
+            {{ consoleCollapsed ? '▲' : '▼' }}
+          </button>
+        </div>
+      </div>
+      @if (!consoleCollapsed) {
+        <div class="console-body" #consoleBody>
+          @for (line of consoleLines$ | async; track $index) {
+            <div class="console-line">
+              <span class="console-ts">[{{ line.timestamp }}]</span>
+              <span class="console-mod">[{{ line.module }}]</span>
+              <span class="console-msg">{{ line.message }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>

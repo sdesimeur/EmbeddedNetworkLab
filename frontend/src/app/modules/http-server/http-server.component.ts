@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { SocketService } from '../../services/socket.service';
+import { ConsoleService } from '../../services/console.service';
 
 interface Video { fileName: string; filePath: string; receivedAt: string; }
 
@@ -27,7 +28,11 @@ export class HttpServerComponent implements OnInit, OnDestroy {
 
   private subs: Subscription[] = [];
 
-  constructor(private api: ApiService, private socket: SocketService) {}
+  constructor(
+    private api: ApiService,
+    private socket: SocketService,
+    private console: ConsoleService,
+  ) {}
 
   async ngOnInit() {
     const status = await this.api.getHttpServerStatus();
@@ -39,12 +44,14 @@ export class HttpServerComponent implements OnInit, OnDestroy {
       this.socket.on<string>('http-server:event').subscribe(msg => {
         this.eventLog.push(msg);
         if (this.eventLog.length > 500) this.eventLog.shift();
+        this.console.log(msg, 'HTTP Server');
       }),
       this.socket.on<{ percent: number }>('http-server:upload-progress').subscribe(p => {
         this.uploadProgress = p.percent;
       }),
       this.socket.on<Video>('http-server:video-received').subscribe(v => {
         this.videos.unshift(v);
+        this.console.log(`Video received: ${v.fileName}`, 'HTTP Server');
       }),
     );
   }
@@ -55,8 +62,10 @@ export class HttpServerComponent implements OnInit, OnDestroy {
       const res = await this.api.startHttpServer({ bindIp: this.bindIp, httpPort: this.httpPort });
       this.isRunning = res.isRunning;
       this.listeningUrls = res.listeningUrls ?? [];
+      this.console.log(`Started on ${this.bindIp}:${this.httpPort}`, 'HTTP Server');
     } catch (e: any) {
       this.errorMsg = e?.error?.error ?? 'Failed to start';
+      this.console.log(`[ERROR] ${this.errorMsg}`, 'HTTP Server');
     }
   }
 
@@ -65,6 +74,7 @@ export class HttpServerComponent implements OnInit, OnDestroy {
     this.isRunning = false;
     this.listeningUrls = [];
     this.uploadProgress = 0;
+    this.console.log('Stopped', 'HTTP Server');
   }
 
   clearLog() { this.eventLog = []; }
