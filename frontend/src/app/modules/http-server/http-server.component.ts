@@ -7,6 +7,7 @@ import { SocketService } from '../../services/socket.service';
 import { ConsoleService } from '../../services/console.service';
 
 interface Video { fileName: string; filePath: string; receivedAt: string; }
+interface UploadProgress { totalRead: number; expected: number; percent: number; }
 
 @Component({
   selector: 'app-http-server',
@@ -23,8 +24,13 @@ export class HttpServerComponent implements OnInit, OnDestroy {
   eventLog: string[] = [];
   videos: Video[] = [];
   uploadProgress = 0;
+  uploadBytes = 0;
+  uploadTotal = 0;
+  uploadCompleted = false;
   errorMsg = '';
   selectedVideo: Video | null = null;
+
+  private progressResetTimer: ReturnType<typeof setTimeout> | null = null;
 
   private subs: Subscription[] = [];
 
@@ -46,8 +52,19 @@ export class HttpServerComponent implements OnInit, OnDestroy {
         if (this.eventLog.length > 500) this.eventLog.shift();
         this.console.log(msg, 'HTTP Server');
       }),
-      this.socket.on<{ percent: number }>('http-server:upload-progress').subscribe(p => {
-        this.uploadProgress = p.percent;
+      this.socket.on<UploadProgress>('http-server:upload-progress').subscribe(p => {
+        this.uploadProgress = Math.min(p.percent, 100);
+        this.uploadBytes = p.totalRead;
+        this.uploadTotal = p.expected;
+        this.uploadCompleted = false;
+        if (this.progressResetTimer) clearTimeout(this.progressResetTimer);
+        if (p.percent >= 100) {
+          this.uploadCompleted = true;
+          this.progressResetTimer = setTimeout(() => {
+            this.uploadProgress = 0;
+            this.uploadCompleted = false;
+          }, 3000);
+        }
       }),
       this.socket.on<Video>('http-server:video-received').subscribe(v => {
         this.videos.unshift(v);
@@ -74,6 +91,8 @@ export class HttpServerComponent implements OnInit, OnDestroy {
     this.isRunning = false;
     this.listeningUrls = [];
     this.uploadProgress = 0;
+    this.uploadCompleted = false;
+    if (this.progressResetTimer) clearTimeout(this.progressResetTimer);
     this.console.log('Stopped', 'HTTP Server');
   }
 
@@ -91,5 +110,14 @@ export class HttpServerComponent implements OnInit, OnDestroy {
     if (this.selectedVideo?.fileName === v.fileName) this.selectedVideo = null;
   }
 
-  ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
+  formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  ngOnDestroy() {
+    this.subs.forEach(s => s.unsubscribe());
+    if (this.progressResetTimer) clearTimeout(this.progressResetTimer);
+  }
 }

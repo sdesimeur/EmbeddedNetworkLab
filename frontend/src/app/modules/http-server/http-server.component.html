@@ -24,13 +24,20 @@
   @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
 </div>
 
-@if (isRunning && uploadProgress > 0 && uploadProgress < 100) {
+@if (isRunning && uploadProgress > 0) {
   <div class="section">
-    <div class="section-title">Upload Progress</div>
+    <div class="section-title">Upload en cours</div>
     <div class="progress-bar-track">
-      <div class="progress-bar-fill" [style.width.%]="uploadProgress"></div>
+      <div class="progress-bar-fill" [class.completed]="uploadCompleted" [style.width.%]="uploadProgress"></div>
     </div>
-    <span class="progress-label">{{ uploadProgress | number:'1.0-0' }}%</span>
+    <div class="progress-meta">
+      <span class="progress-label" [class.completed-text]="uploadCompleted">
+        @if (uploadCompleted) { Terminé } @else { {{ uploadProgress | number:'1.0-0' }}% }
+      </span>
+      @if (uploadTotal > 0) {
+        <span class="progress-size">{{ formatBytes(uploadBytes) }} / {{ formatBytes(uploadTotal) }}</span>
+      }
+    </div>
   </div>
 }
 
