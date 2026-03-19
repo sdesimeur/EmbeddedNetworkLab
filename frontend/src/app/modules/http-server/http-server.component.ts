@@ -27,6 +27,7 @@ export class HttpServerComponent implements OnInit, OnDestroy {
   uploadBytes = 0;
   uploadTotal = 0;
   uploadCompleted = false;
+  uploading = false;
   errorMsg = '';
   selectedVideo: Video | null = null;
 
@@ -108,6 +109,66 @@ export class HttpServerComponent implements OnInit, OnDestroy {
     await this.api.deleteVideo(v.fileName);
     this.videos = this.videos.filter(x => x.fileName !== v.fileName);
     if (this.selectedVideo?.fileName === v.fileName) this.selectedVideo = null;
+  }
+
+  onFileSelected(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    this.uploadRaw(files[0]);
+  }
+
+  uploadRaw(file: File) {
+    this.uploading = true;
+    this.uploadCompleted = false;
+    this.uploadProgress = 0;
+    this.uploadBytes = 0;
+    this.uploadTotal = file.size;
+    this.errorMsg = '';
+    if (this.progressResetTimer) clearTimeout(this.progressResetTimer);
+
+    const host = this.bindIp === '0.0.0.0' ? 'localhost' : this.bindIp;
+    const url = `http://${host}:${this.httpPort}/upload/raw`;
+
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      this.uploading = false;
+      this.errorMsg = 'Impossible de lire le fichier';
+    };
+
+    reader.onload = () => {
+      const buffer = reader.result as ArrayBuffer;
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          this.uploadProgress = (e.loaded / e.total) * 100;
+          this.uploadBytes = e.loaded;
+        }
+      };
+
+      xhr.onload = () => {
+        this.uploading = false;
+        this.uploadCompleted = true;
+        this.uploadProgress = 100;
+        this.progressResetTimer = setTimeout(() => {
+          this.uploadProgress = 0;
+          this.uploadCompleted = false;
+        }, 3000);
+      };
+
+      xhr.onerror = () => {
+        this.uploading = false;
+        this.uploadProgress = 0;
+        this.errorMsg = `Échec de l'envoi vers ${url}`;
+      };
+
+      xhr.open('POST', url);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name));
+      xhr.send(buffer);
+    };
+
+    reader.readAsArrayBuffer(file);
   }
 
   formatBytes(bytes: number): string {

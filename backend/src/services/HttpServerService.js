@@ -54,7 +54,10 @@ class HttpServerService extends EventEmitter {
 
     // Raw stream upload endpoint
     app.post('/upload/raw', (req, res) => {
-      const fileName = `video_${Date.now()}.mp4`;
+      const rawName = req.headers['x-filename'];
+      const fileName = rawName
+        ? path.basename(decodeURIComponent(rawName))
+        : `video_${Date.now()}.mp4`;
       const savePath = path.join(VIDEOS_DIR, fileName);
       const expected = parseInt(req.headers['content-length'] || '0', 10);
       const clientIp = req.ip;
@@ -62,17 +65,12 @@ class HttpServerService extends EventEmitter {
 
       this.emit('event', `[${ts}] [UPLOAD START] ${fileName} from ${clientIp} size=${expected} bytes`);
 
-      // Log headers
-      for (const [key, val] of Object.entries(req.headers)) {
-        this.emit('event', `[${ts}] [HEADER] ${key}: ${val}`);
-      }
-
-      const ws = fs.createWriteStream(savePath);
+      const chunks = [];
       let totalRead = 0;
       const startMs = Date.now();
 
       req.on('data', (chunk) => {
-        ws.write(chunk);
+        chunks.push(chunk);
         totalRead += chunk.length;
         if (expected > 0) {
           const percent = (totalRead / expected) * 100;
@@ -81,23 +79,48 @@ class HttpServerService extends EventEmitter {
       });
 
       req.on('end', () => {
-        ws.end();
-        const duration = Math.max((Date.now() - startMs) / 1000, 0.001);
-        const rateMbps = ((totalRead * 8) / 1_000_000 / duration).toFixed(2);
-        const doneTs = new Date().toLocaleTimeString();
-        this.emit('event', `[${doneTs}] [UPLOAD DONE] ${fileName} ${totalRead} bytes in ${duration.toFixed(2)}s (${rateMbps} Mbps)`);
+        let data = Buffer.concat(chunks);
 
-        this.emit('video-received', {
-          fileName,
-          filePath: savePath,
-          receivedAt: new Date().toISOString(),
+        // Si le body est multipart/form-data, extraire uniquement le contenu du fichier
+        const contentType = req.headers['content-type'] || '';
+        const boundaryMatch = contentType.match(/boundary=([^\s;]+)/);
+        if (boundaryMatch) {
+          const boundary = boundaryMatch[1].replace(/^"(.*)"$/, '$1');
+          // Chercher la fin des headers de la part (double CRLF)
+          const headerEnd = data.indexOf('\r\n\r\n');
+          if (headerEnd !== -1) {
+            const contentStart = headerEnd + 4;
+            // Chercher le boundary de fermeture
+            const closing = Buffer.from('\r\n--' + boundary + '--');
+            const contentEnd = data.lastIndexOf(closing);
+            data = contentEnd !== -1
+              ? data.slice(contentStart, contentEnd)
+              : data.slice(contentStart);
+          }
+        }
+
+        fs.writeFile(savePath, data, (err) => {
+          if (err) {
+            this.emit('event', `[ERROR] writing file: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+          }
+
+          const duration = Math.max((Date.now() - startMs) / 1000, 0.001);
+          const rateMbps = ((data.length * 8) / 1_000_000 / duration).toFixed(2);
+          const doneTs = new Date().toLocaleTimeString();
+          this.emit('event', `[${doneTs}] [UPLOAD DONE] ${fileName} ${data.length} bytes in ${duration.toFixed(2)}s (${rateMbps} Mbps)`);
+
+          this.emit('video-received', {
+            fileName,
+            filePath: savePath,
+            receivedAt: new Date().toISOString(),
+          });
+
+          res.json({ status: 'uploaded' });
         });
-
-        res.json({ status: 'uploaded' });
       });
 
       req.on('error', (err) => {
-        ws.end();
         this.emit('event', `[ERROR] raw upload: ${err.message}`);
         res.status(500).json({ error: err.message });
       });

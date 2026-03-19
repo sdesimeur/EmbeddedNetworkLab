@@ -19,6 +19,10 @@
     }
     @if (isRunning) {
       <span class="url-badge" *ngFor="let url of listeningUrls">{{ url }}</span>
+      <input type="file" #fileInput style="display:none" (change)="onFileSelected(fileInput.files)">
+      <button class="btn-secondary" (click)="fileInput.click()" [disabled]="uploading">
+        {{ uploading ? 'Envoi...' : 'Envoyer un fichier' }}
+      </button>
     }
   </div>
   @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
